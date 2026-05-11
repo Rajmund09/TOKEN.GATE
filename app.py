@@ -48,12 +48,30 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
 )
 
+# Ensure data files on startup (Required for Gunicorn readiness)
+ensure_data_files()
+
 @app.after_request
-def add_security_headers(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    # Only for HTTPS: response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+def apply_security_headers(response: Response) -> Response:
+    # Security Headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "img-src 'self' data:; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "script-src 'self' 'unsafe-inline';"
+    )
+    # response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
+    # Cache Control (Disable caching for all API/Admin responses)
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    
     return response
 
 # Security Middleware
@@ -69,14 +87,6 @@ def validate_csrf():
         # In this simple implementation, we rely on the session cookie 'HttpOnly' and 'SameSite=Lax'
         pass
 
-@app.after_request
-def security_headers(response: Response) -> Response:
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    return response
 
 data_lock = threading.Lock()
 
@@ -339,14 +349,6 @@ def make_qr_png(token: str) -> io.BytesIO:
     return buffer
 
 
-@app.after_request
-def disable_cache(response: Response) -> Response:
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    return response
 
 
 @app.route("/")
@@ -766,7 +768,6 @@ def qr_image(token: str) -> Response:
 
 
 if __name__ == "__main__":
-    ensure_data_files()
     # Render deployment configuration: 0.0.0.0 and dynamic PORT
     # Debug mode is DISABLED for production safety
     app.run(
