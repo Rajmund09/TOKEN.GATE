@@ -25,19 +25,28 @@ EVENTS_FILE = DATA_DIR / "events.json"
 
 # CONFIGURATION FROM ENV
 OWNER_USER = os.environ.get("ADMIN_USER", "owner")
-OWNER_PASS = os.environ.get("ADMIN_PASS", "1234")
+# ADMIN_PASS is REQUIRED for production security
+OWNER_PASS = os.environ["ADMIN_PASS"]
 
 SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
 SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "TOKEN.GATE <noreply@tokengate.com>")
-SUPERVISOR_EMAIL = "prabhushankarmund@gmail.com"
+SUPERVISOR_EMAIL = os.environ.get("SUPERVISOR_EMAIL", "prabhushankarmund@gmail.com")
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
-app.config["SECRET_KEY"] = os.environ.get("APP_SECRET_KEY", "industrial-strength-secret-2026")
+# APP_SECRET_KEY is REQUIRED for session security
+app.config["SECRET_KEY"] = os.environ["APP_SECRET_KEY"]
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=2)
 app.config["JSON_SORT_KEYS"] = False
+
+# Production Session Security
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=True, # Set to True for HTTPS (Render provides this)
+    SESSION_COOKIE_SAMESITE="Lax",
+)
 
 @app.after_request
 def add_security_headers(response):
@@ -73,11 +82,17 @@ data_lock = threading.Lock()
 
 
 def ensure_data_files() -> None:
+    """Ensure required data directory and JSON files exist for production readiness."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     if not CUSTOMERS_FILE.exists():
         CUSTOMERS_FILE.write_text("{}", encoding="utf-8")
     if not EVENTS_FILE.exists():
         EVENTS_FILE.write_text("{}", encoding="utf-8")
+    
+    # Initialize history.json if missing
+    history_path = DATA_DIR / "history.json"
+    if not history_path.exists():
+        history_path.write_text("[]", encoding="utf-8")
 
 
 def read_json(file: Path) -> dict[str, Any]:
@@ -752,4 +767,10 @@ def qr_image(token: str) -> Response:
 
 if __name__ == "__main__":
     ensure_data_files()
-    app.run(debug=True, port=5000)
+    # Render deployment configuration: 0.0.0.0 and dynamic PORT
+    # Debug mode is DISABLED for production safety
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=False
+    )
