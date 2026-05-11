@@ -14,6 +14,7 @@ import qrcode
 from flask import Flask, Response, jsonify, request, send_file, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
+from email_validator import validate_email, EmailNotValidError
 
 # Load Environment Variables
 load_dotenv()
@@ -29,7 +30,10 @@ OWNER_USER = os.environ.get("ADMIN_USER", "owner")
 OWNER_PASS = os.environ["ADMIN_PASS"]
 
 SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
+try:
+    SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
+except (ValueError, TypeError):
+    SMTP_PORT = 587
 SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "TOKEN.GATE <noreply@tokengate.com>")
@@ -206,9 +210,16 @@ def generate_token(prefix: str = "") -> str:
 
 
 def send_email(to_email: str, subject: str, body_html: str) -> None:
-    """Send a real email via SMTP if credentials are provided, otherwise log to console."""
+    """Dispatches an email in a background thread to prevent blocking the UI."""
+    thread = threading.Thread(target=_send_email_sync, args=(to_email, subject, body_html))
+    thread.daemon = True
+    thread.start()
+
+
+def _send_email_sync(to_email: str, subject: str, body_html: str) -> None:
+    """Real email logic executed in background. Includes timeouts and robust error handling."""
     if not SMTP_USER or not SMTP_PASS:
-        print(f"\n[MOCK EMAIL] TO: {to_email}\nSUBJECT: {subject}\nCONTENT: {body_html}\n")
+        app.logger.info(f"\n[MOCK EMAIL] TO: {to_email}\nSUBJECT: {subject}\n")
         return
 
     try:
@@ -218,15 +229,13 @@ def send_email(to_email: str, subject: str, body_html: str) -> None:
         msg["To"] = to_email
         msg.attach(MIMEText(body_html, "html"))
 
-        print(f"Attempting to send email to {to_email} via {SMTP_SERVER}:{SMTP_PORT}...")
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.set_debuglevel(0) # Set to 1 for detailed SMTP logs if needed
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+            server.set_debuglevel(0)
             server.starttls()
             server.login(SMTP_USER, SMTP_PASS)
             server.send_message(msg)
-        print(f"SUCCESS: Email sent to {to_email}")
     except Exception as e:
-        print(f"CRITICAL ERROR: Failed to send email to {to_email}: {e}")
+        app.logger.error(f"CRITICAL ERROR: Failed to send email to {to_email}: {e}")
 
 
 def notify_event_creation(manager_email: str, manager_name: str, event_name: str, event_id: str) -> None:
@@ -538,6 +547,12 @@ def register_event() -> Response:
     if not name or not event_name or not password:
         return jsonify({"error": "Missing Required Transmission Parameters"}), 400
 
+    # Email Validation
+    try:
+        validate_email(manager_email)
+    except EmailNotValidError as e:
+        return jsonify({"error": f"Invalid Email Format: {str(e)}"}), 400
+
     event_id = generate_token("EVT-")
     events = read_events()
     
@@ -576,6 +591,12 @@ def create_request() -> Response:
 
     if not name or not email or not event_id:
         return jsonify({"error": "Identity and Session Choice Required"}), 400
+
+    # Email Validation
+    try:
+        validate_email(email)
+    except EmailNotValidError as e:
+        return jsonify({"error": f"Invalid Email Format: {str(e)}"}), 400
 
     events = read_events()
     if event_id not in events:
