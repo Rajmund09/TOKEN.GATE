@@ -10,7 +10,8 @@ const state = {
   requests: [],
   activeEvents: [],
   allEvents: [], // For Root Admin
-  isRoot: false
+  isRoot: false,
+  scanner: null
 };
 
 const UI = {
@@ -86,6 +87,7 @@ const UI = {
   addFieldBtn: document.getElementById('addFieldBtn'),
   fieldBuilderList: document.getElementById('fieldBuilderList'),
   dynamicFieldsContainer: document.getElementById('dynamicFieldsContainer'),
+  scannerStatus: document.getElementById('scannerStatus'),
 
   // Global
   toast: document.getElementById('toast'),
@@ -367,6 +369,7 @@ const loadAdminDashboard = () => {
     }
 
   fetchRequests();
+  initScanner();
 };
 
 const toggleAdminView = () => {
@@ -523,6 +526,63 @@ const logVerify = (msg, type, isFirst = true) => {
   entry.style.fontSize = '0.75rem';
   entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}`;
   UI.verifyLog.prepend(entry);
+};
+
+// --- QR SCANNER LOGIC ---
+
+const initScanner = () => {
+  if (!document.getElementById('reader')) return;
+  if (state.scanner) return;
+
+  state.scanner = new Html5QrcodeScanner("reader", { 
+    fps: 10, 
+    qrbox: { width: 250, height: 250 },
+    aspectRatio: 1.0
+  });
+
+  const onScanSuccess = async (decodedText) => {
+    // Check if scanned text is a URL with a token
+    let token = decodedText;
+    try {
+      const url = new URL(decodedText);
+      const urlToken = url.searchParams.get("token");
+      if (urlToken) token = urlToken;
+    } catch (e) {
+      // Not a URL, assume it's the token itself
+    }
+
+    if (UI.scannerStatus) UI.scannerStatus.textContent = "SIGNAL ACQUIRED";
+    
+    try {
+      const data = await api(`/api/verify?token=${token}`);
+      logVerify(data.message, 'success', data.is_first_entry);
+      showToast(data.message);
+      fetchRequests(); // Refresh list to show 'ENTERED' badge
+      
+      // Visual feedback in scanner
+      if (UI.scannerStatus) {
+        UI.scannerStatus.textContent = "ACCESS GRANTED";
+        UI.scannerStatus.style.color = "var(--success)";
+        setTimeout(() => {
+            UI.scannerStatus.textContent = "AWAITING SIGNAL";
+            UI.scannerStatus.style.color = "";
+        }, 3000);
+      }
+    } catch (err) {
+      logVerify(err.message, 'error');
+      showToast(err.message);
+      if (UI.scannerStatus) {
+        UI.scannerStatus.textContent = "ACCESS DENIED";
+        UI.scannerStatus.style.color = "var(--secondary)";
+        setTimeout(() => {
+            UI.scannerStatus.textContent = "AWAITING SIGNAL";
+            UI.scannerStatus.style.color = "";
+        }, 3000);
+      }
+    }
+  };
+
+  state.scanner.render(onScanSuccess);
 };
 
 // --- MODALS & QR ---

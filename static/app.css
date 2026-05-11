@@ -474,7 +474,8 @@ select option {
 .scanner-box {
   background: #000;
   border: 1px solid var(--border);
-  height: 250px;
+  min-height: 250px;
+  height: auto;
   position: relative;
   overflow: hidden;
   margin-bottom: 2rem;
@@ -702,4 +703,47 @@ select option {
   to { transform: rotate(360deg); }
 }
 
-.hidden { display: none !important; }
+/* --- QR SCANNER CUSTOM STYLES --- */
+#reader {
+    border: none !important;
+}
+
+#reader video {
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 0px !important;
+}
+
+#reader__dashboard_section_csr button {
+    background: var(--surface-light) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--accent) !important;
+    padding: 0.8rem 1.5rem !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    text-transform: uppercase !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 1px !important;
+    cursor: pointer !important;
+    margin: 1rem 0 !important;
+    transition: 0.3s !important;
+}
+
+#reader__dashboard_section_csr button:hover {
+    background: var(--accent-dim) !important;
+    border-color: var(--accent) !important;
+}
+
+#reader__status_span {
+    color: var(--text-dim) !important;
+    font-size: 0.6rem !important;
+    font-family: monospace !important;
+}
+
+#reader__camera_selection {
+    background: #000 !important;
+    color: #fff !important;
+    border: 1px solid var(--border) !important;
+    padding: 0.5rem !important;
+    font-size: 0.7rem !important;
+    margin-bottom: 1rem !important;
+}
