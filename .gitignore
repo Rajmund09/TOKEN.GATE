@@ -1,0 +1,15 @@
+# --- Production Shield Ignore List ---
+
+# Environment Secrets
+.env
+
+# Local Database Files (JSON Vaults)
+data/*.json
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# IDE Settings
+.vscode/
+.idea/
