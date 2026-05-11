@@ -48,8 +48,6 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
 )
 
-# Ensure data files on startup (Required for Gunicorn readiness)
-ensure_data_files()
 
 @app.after_request
 def apply_security_headers(response: Response) -> Response:
@@ -103,6 +101,9 @@ def ensure_data_files() -> None:
     history_path = DATA_DIR / "history.json"
     if not history_path.exists():
         history_path.write_text("[]", encoding="utf-8")
+
+# Ensure data files on startup (Required for Gunicorn readiness)
+ensure_data_files()
 
 
 def read_json(file: Path) -> dict[str, Any]:
