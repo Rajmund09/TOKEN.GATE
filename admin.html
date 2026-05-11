@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOKEN.GATE | Management Terminal</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-page">
+  <!-- TERMINAL BOOT LOADER -->
+  <div id="bootLoader" class="boot-loader">
+    <div class="boot-content">
+      <div class="loader"></div>
+      <p class="terminal-text">ESTABLISHING SECURE UPLINK...</p>
+    </div>
+  </div>
+
+  <div class="grid-overlay"></div>
+  
+  <nav class="nav-bar">
+    <div class="logo">TERMINAL.GATE</div>
+    <div class="nav-actions">
+      <a href="/" class="nav-btn">Public Portal</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section id="adminSection" class="view-section active">
+      <!-- LOGIN PORTAL -->
+      <div id="adminLogin" class="login-container fade-up">
+        <div class="panel login-panel">
+          <div class="panel-header">
+            <span class="kicker">Authorization Required</span>
+            <h2>Terminal Secure Sync</h2>
+          </div>
+          <div class="login-tabs" style="display:flex; gap:0.5rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.05);">
+            <button type="button" id="tabHoster" class="tab-btn active" style="flex:1; padding:0.6rem; background:rgba(0, 242, 255, 0.05); border:1px solid var(--accent); color:var(--accent); font-family:'Space Grotesk', sans-serif; font-size:0.6rem; letter-spacing:1px; cursor:pointer; border-radius:4px;">HOSTER SYNC</button>
+            <button type="button" id="tabSupervisor" class="tab-btn" style="flex:1; padding:0.6rem; background:none; border:1px solid transparent; color:var(--secondary); font-family:'Space Grotesk', sans-serif; font-size:0.6rem; letter-spacing:1px; cursor:pointer; border-radius:4px;">SUPERIOR OVERRIDE</button>
+          </div>
+          <form id="adminLoginForm" class="industrial-form">
+            <div class="form-group">
+              <label id="userLabel" for="adminUser">Identity Identifier (Event ID)</label>
+              <input type="text" id="adminUser" name="username" placeholder="EVT-XXXX-XXXX" required>
+            </div>
+            <div class="form-group">
+              <label id="passLabel" for="adminPass">Security Access Key</label>
+              <input type="password" id="adminPass" name="password" placeholder="••••" required>
+            </div>
+            <button type="submit" class="btn-primary">Connect to Mainframe</button>
+          </form>
+          <p class="dim-text" style="margin-top:20px; font-size:0.8rem; text-align:center;">
+            Encryption Protocol: AES-256 | Terminal v2.0.4
+          </p>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="adminDashboard" class="dashboard-container hidden">
+        <header class="dashboard-header">
+          <div class="user-info">
+            <div class="status-indicator online"></div>
+            <span id="adminNameDisplay" class="terminal-text">MANAGER</span>
+            <span id="rootBadge" class="badge hidden">ROOT_ACCESS</span>
+          </div>
+          <div class="header-actions">
+        <div class="header-actions">
+            <button id="historyBtn" class="btn-outline hidden" style="border-color:var(--accent); font-size:0.7rem;">AUDIT VAULT</button>
+            <button id="purgeAllBtn" class="btn-outline hidden" style="color:var(--secondary); border-color:var(--secondary); font-size:0.7rem;">MASTER PURGE</button>
+            <button id="toggleEventsBtn" class="btn-outline hidden">Manage Sessions</button>
+            <button id="logoutBtn" class="btn-outline">Shutdown Terminal</button>
+        </div>
+        </header>
+
+        <div id="mainDashboardView" class="dashboard-grid">
+          <!-- GUEST REQUESTS PANEL -->
+          <div class="panel list-panel">
+            <div class="panel-header">
+              <div class="header-with-action">
+                <h2>Guest Transmissions</h2>
+                <input type="text" id="adminSearch" placeholder="Filter identities..." class="search-compact">
+              </div>
+            </div>
+            <div id="requestsList" class="request-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- VERIFICATION PANEL -->
+          <div class="panel control-panel">
+            <div class="panel-header">
+              <span class="kicker">Signal Verification</span>
+              <h2>Gate Controller</h2>
+            </div>
+            <div class="scanner-box">
+              <div class="scan-line"></div>
+              <div class="scan-target">
+                <div class="corner tl"></div><div class="corner tr"></div>
+                <div class="corner bl"></div><div class="corner br"></div>
+              </div>
+              <div class="scanner-text">AWAITING SIGNAL</div>
+            </div>
+            <div class="manual-verify">
+              <input type="text" id="manualVerifyToken" placeholder="Manual Token Entry">
+              <button id="verifyTokenBtn" class="btn-primary">Verify Access</button>
+            </div>
+            <div id="verifyLog" class="verify-log">
+              <!-- Log entries -->
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW HISTORY VAULT VIEW -->
+        <div id="historyVaultView" class="hidden" style="margin-top:2rem;">
+            <div class="panel">
+                <div class="panel-header" style="border-bottom: 1px solid var(--border); margin-bottom:1.5rem;">
+                    <h2>PERMANENT AUDIT VAULT</h2>
+                    <p style="font-size:0.7rem; color:var(--secondary);">IMMUTABLE LOGS OF ALL TERMINAL INTERACTIONS</p>
+                </div>
+                <div id="historyLog" class="request-list" style="max-height: 60vh; overflow-y: auto;">
+                    <!-- History entries -->
+                </div>
+            </div>
+        </div>
+
+        <!-- GLOBAL EVENTS VIEW (ROOT ONLY) -->
+        <div id="globalEventsView" class="panel hidden" style="margin-top: 2rem;">
+            <div class="panel-header">
+                <h2>Global Session Registry</h2>
+                <p class="dim-text">Monitor and purge active event sessions.</p>
+            </div>
+            <div id="eventsList" class="request-list">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- CONFIRMATION MODAL -->
+  <dialog id="confirmModal" class="modal industrial-modal">
+    <div class="modal-content success-content" style="border-color: var(--secondary); max-width: 500px;">
+      <div class="modal-header">
+        <span class="kicker" style="color: var(--secondary);">Security Override</span>
+        <h2 id="confirmTitle">Confirm Action</h2>
+      </div>
+      <div class="modal-body" style="margin: 1.5rem 0;">
+        <p id="confirmMessage" class="terminal-text" style="font-size: 0.9rem; line-height: 1.4; color: var(--text-dim);"></p>
+      </div>
+      <div class="modal-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <button id="confirmCancelBtn" class="btn-outline">Abort</button>
+        <button id="confirmProceedBtn" class="btn-primary" style="background: var(--secondary); color: white;">Proceed</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+  <div class="noise-overlay"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOKEN.GATE | Industrial Party Access</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="dark-mode">
+  <!-- TERMINAL BOOT LOADER -->
+  <div id="bootLoader" class="boot-loader">
+    <div class="boot-content">
+      <div class="loader"></div>
+      <p class="terminal-text">SYNCING SYSTEM PROTOCOLS...</p>
+    </div>
+  </div>
+
+  <div class="grid-overlay"></div>
+  
+  <nav class="nav-bar">
+    <div class="logo">
+      <span class="glitch" data-text="TOKEN.GATE">TOKEN.GATE</span>
+    </div>
+    <div class="nav-actions">
+      <button id="viewSwitchUser" class="nav-btn active">Public</button>
+      <button id="viewSwitchHost" class="nav-btn">Host Event</button>
+      <a href="/admin" class="nav-btn" style="text-decoration: none;">Terminal</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- PUBLIC USER SECTION -->
+    <section id="userSection" class="view-section active">
+      <header class="view-header">
+        <h1 class="reveal-text">Secure access for the elite.</h1>
+        <p class="fade-in">Request your digital pass for active event sessions.</p>
+      </header>
+
+      <div class="card-grid">
+        <article class="panel main-panel fade-up">
+          <div class="panel-header">
+            <span class="kicker">Access Request</span>
+            <h2>Guest Registration</h2>
+          </div>
+          <form id="requestForm" class="industrial-form">
+            <div class="form-group">
+              <label for="reqEvent">Select Active Session</label>
+              <select id="reqEvent" name="event_id" required>
+                <option value="" disabled selected>Loading sessions...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="reqName">Identity (Full Name)</label>
+              <input type="text" id="reqName" name="name" placeholder="John Doe" required>
+            </div>
+            <div class="form-group">
+              <label for="reqEmail">Communication (Email)</label>
+              <input type="email" id="reqEmail" name="email" placeholder="john@example.com" required>
+            </div>
+            <div id="dynamicFieldsContainer" class="industrial-form" style="gap:1rem; margin-bottom:1rem;">
+              <!-- Dynamically populated based on event selection -->
+            </div>
+            <button type="submit" class="btn-primary">
+              <span class="btn-text">Transmit Request</span>
+              <div class="loader hidden"></div>
+            </button>
+          </form>
+        </article>
+
+        <aside class="panel side-panel fade-up" style="animation-delay: 0.2s;">
+          <div class="panel-header">
+            <span class="kicker">Identity Check</span>
+            <h2>My Token</h2>
+          </div>
+          <div class="status-search">
+            <input type="text" id="statusToken" placeholder="Paste token code">
+            <button id="checkStatusBtn" class="btn-secondary">Check</button>
+          </div>
+          <div id="statusResult" class="status-card empty">
+            <p>Enter token to sync status.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- HOST REGISTRATION SECTION -->
+    <section id="hostSection" class="view-section">
+      <div class="view-header">
+        <span class="kicker">Session Management</span>
+        <h1>Establish.</h1>
+        <p>Register as a Session Manager to authorize and monitor identity transmissions.</p>
+      </div>
+
+      <div class="panel max-width-panel fade-up" style="max-width: 600px; margin: 0 auto;">
+        <div class="panel-header">
+          <span class="kicker">Protocol Setup</span>
+          <h2>Initialize Event</h2>
+        </div>
+        <form id="hostForm" class="industrial-form">
+          <div class="form-group">
+            <label for="hostName">Manager Identity</label>
+            <input type="text" id="hostName" name="manager_name" placeholder="Full Legal Identity" required>
+          </div>
+          <div class="form-group">
+            <label for="hostEmail">Notification Channel (Email)</label>
+            <input type="email" id="hostEmail" name="email" placeholder="manager@access.gate" required>
+          </div>
+          <div class="form-group">
+            <label for="hostEventName">Session Name</label>
+            <input type="text" id="hostEventName" name="event_name" placeholder="E.g. Neon Horizon, Private Gala" required>
+          </div>
+          <div class="form-group">
+            <label for="hostPass">Security Key</label>
+            <input type="password" id="hostPass" name="password" placeholder="Terminal Access Password" required>
+          </div>
+          
+          <div class="form-group" style="margin-top:1rem; border-top:1px solid var(--border); padding-top:1rem;">
+            <label>Registration Form Customization</label>
+            <p class="dim-text" style="font-size:0.7rem; margin-bottom:1rem;">Add extra fields like Gender, Meal Preference, or Student/Teacher status.</p>
+            <div id="fieldBuilderList" style="display:flex; flex-direction:column; gap:0.8rem;">
+              <!-- Field rows will go here -->
+            </div>
+            <button type="button" id="addFieldBtn" class="btn-outline" style="margin-top:1rem; width:100%; border-style:dashed;">+ ADD CUSTOM FIELD</button>
+          </div>
+
+          <button type="submit" class="btn-primary" style="margin-top:1rem;">
+            <span>START SESSION</span>
+            <div class="loader hidden"></div>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- SUCCESS MODAL -->
+    <dialog id="successModal" class="modal industrial-modal">
+        <!-- Content same as before -->
+        <div class="modal-content success-content">
+            <div class="modal-header">
+                <span class="kicker">Session Encrypted</span>
+                <h2>Registration Complete</h2>
+            </div>
+            <div class="success-body">
+                <p>Your event session has been established. Record your credentials immediately.</p>
+                <div class="data-reveal">
+                    <label>EVENT ID</label>
+                    <div class="id-container">
+                        <code id="displayEventId">EVT-XXXX-XXXX</code>
+                        <button id="copyEventId" class="btn-icon">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <p class="warning-text">Failure to record this ID will result in loss of terminal access.</p>
+            </div>
+            <div class="modal-actions">
+                <button id="closeSuccessBtn" class="btn-primary">Go to Terminal</button>
+            </div>
+        </div>
+    </dialog>
+
+  <!-- QR MODAL -->
+  <dialog id="qrDialog" class="modal industrial-modal">
+    <div class="modal-content">
+      <button class="close-modal">&times;</button>
+      <div class="modal-header">
+        <span class="kicker">Pass Verification</span>
+        <h2 id="modalName">IDENTITY</h2>
+      </div>
+      <div class="qr-display">
+        <div class="qr-frame">
+          <img id="modalQr" src="" alt="QR Code">
+        </div>
+        <div class="token-info">
+          <code id="modalToken">TOKEN-ID</code>
+          <p id="modalExpiry" class="dim-text">Valid Until: --/--</p>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="copyTokenBtn" class="btn-secondary">Copy ID</button>
+        <a id="downloadQrBtn" href="" download="token_gate_pass.png" class="btn-primary">Download PNG</a>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- CONFIRMATION MODAL -->
+  <dialog id="confirmModal" class="modal industrial-modal">
+    <div class="modal-content success-content" style="border-color: var(--secondary); max-width: 500px;">
+      <div class="modal-header">
+        <span class="kicker" style="color: var(--secondary);">Security Override</span>
+        <h2 id="confirmTitle">Confirm Action</h2>
+      </div>
+      <div class="modal-body" style="margin: 1.5rem 0;">
+        <p id="confirmMessage" class="terminal-text" style="font-size: 0.9rem; line-height: 1.4; color: var(--text-dim);"></p>
+      </div>
+      <div class="modal-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <button id="confirmCancelBtn" class="btn-outline">Abort</button>
+        <button id="confirmProceedBtn" class="btn-primary" style="background: var(--secondary); color: white;">Proceed</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="noise-overlay"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
