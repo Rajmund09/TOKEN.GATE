@@ -353,11 +353,11 @@ def notify_entry_success(email: str, name: str, event_name: str) -> None:
 def make_qr_png(token: str) -> io.BytesIO:
     url = f"{request.host_url}api/verify?token={token}"
     
-    # Generate high-resolution, high-error-correction QR
+    # Generate standard-resolution, low-error-correction QR for better screen scanning
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=12,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
         border=4,
     )
     qr.add_data(url)
