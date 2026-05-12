@@ -62,10 +62,10 @@ def apply_security_headers(response: Response) -> Response:
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "img-src 'self' data:; "
+        "img-src 'self' data: blob:; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
-        "script-src 'self' 'unsafe-inline';"
+        "script-src 'self' 'unsafe-inline' https://unpkg.com;"
     )
     # response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     
@@ -203,8 +203,8 @@ def require_auth() -> Response | None:
     return None
 
 
-def generate_token(prefix: str = "") -> str:
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+def generate_token(prefix: str = "TG-") -> str:
+    timestamp = datetime.now().strftime('%y%m%d') # YYMMDD format
     random_part = secrets.token_hex(4).upper()
     return f"{prefix}{timestamp}-{random_part}"
 
@@ -352,7 +352,18 @@ def notify_entry_success(email: str, name: str, event_name: str) -> None:
 
 def make_qr_png(token: str) -> io.BytesIO:
     url = f"{request.host_url}api/verify?token={token}"
-    qr_image = qrcode.make(url)
+    
+    # Generate high-resolution, high-error-correction QR
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=12,
+        border=4,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    qr_image = qr.make_image(fill_color="black", back_color="white")
+    
     buffer = io.BytesIO()
     qr_image.save(buffer, format="PNG")
     buffer.seek(0)
@@ -366,9 +377,14 @@ def index() -> Response:
     return send_from_directory(BASE_DIR, "index.html")
 
 
-@app.route("/admin")
-def admin_page() -> Response:
-    return send_from_directory(BASE_DIR, "admin.html")
+@app.route("/hoster")
+def hoster_page() -> Response:
+    return send_from_directory(BASE_DIR, "hoster.html")
+
+
+@app.route("/superior")
+def superior_page() -> Response:
+    return send_from_directory(BASE_DIR, "superior.html")
 
 
 @app.get("/api/session")
