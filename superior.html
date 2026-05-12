@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOKEN.GATE | Superior Terminal</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="admin-page">
+  <!-- TERMINAL BOOT LOADER -->
+  <div id="bootLoader" class="boot-loader">
+    <div class="boot-content">
+      <div class="loader"></div>
+      <p class="terminal-text" style="color: var(--secondary);">ESTABLISHING ROOT UPLINK...</p>
+    </div>
+  </div>
+
+  <div class="grid-overlay"></div>
+  
+  <nav class="nav-bar">
+    <div class="logo" style="color: var(--secondary); text-shadow: 0 0 10px rgba(255,0,85,0.3);">TERMINAL.GATE <span style="font-size: 0.6em; color: var(--text-dim);">// ROOT</span></div>
+    <div class="nav-actions">
+      <a href="/" class="nav-btn">Public Portal</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section id="adminSection" class="view-section active">
+      <!-- LOGIN PORTAL -->
+      <div id="adminLogin" class="login-container fade-up">
+        <div class="panel login-panel stagger-enter" style="border-top-color: var(--secondary);">
+          <div class="panel-header">
+            <span class="kicker" style="color: var(--secondary);">Root Authorization Required</span>
+            <h2>Superior Override</h2>
+          </div>
+          <form id="adminLoginForm" class="industrial-form">
+            <input type="hidden" name="protocol" value="superior">
+            <div class="form-group">
+              <label for="adminUser">Root Identifier</label>
+              <input type="text" id="adminUser" name="username" placeholder="ROOT" required>
+            </div>
+            <div class="form-group">
+              <label for="adminPass">Master Access Key</label>
+              <input type="password" id="adminPass" name="password" placeholder="••••" required>
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 1rem; background: var(--secondary); border-color: var(--secondary); color: white;">Bypass Mainframe</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="adminDashboard" class="dashboard-container hidden">
+        <header class="dashboard-header stagger-enter">
+          <div class="user-info">
+            <div class="status-indicator online" style="background: var(--secondary); box-shadow: 0 0 10px var(--secondary);"></div>
+            <span id="adminNameDisplay" class="terminal-text">ROOT_ADMIN</span>
+            <span id="rootBadge" class="badge">ROOT_ACCESS</span>
+          </div>
+          <div class="header-actions">
+            <button id="purgeAllBtn" class="btn-outline" style="color:var(--secondary); border-color:var(--secondary); font-size:0.7rem;">MASTER PURGE</button>
+            <button id="logoutBtn" class="btn-outline">Shutdown Terminal</button>
+          </div>
+        </header>
+
+        <div class="dashboard-grid">
+          <!-- GLOBAL EVENTS VIEW -->
+          <div id="globalEventsView" class="panel list-panel stagger-enter" style="animation-delay: 0.1s; border-top-color: var(--secondary);">
+              <div class="panel-header">
+                  <h2>Global Session Registry</h2>
+                  <p class="dim-text">Monitor and purge active event sessions.</p>
+              </div>
+              <div id="eventsList" class="request-list">
+                  <!-- Dynamically populated -->
+              </div>
+          </div>
+
+          <!-- HISTORY VAULT VIEW -->
+          <div id="historyVaultView" class="panel console-panel stagger-enter" style="animation-delay: 0.2s;">
+              <div class="panel-header" style="border-bottom: 1px solid var(--border); margin-bottom:1.5rem;">
+                  <h2>PERMANENT AUDIT VAULT</h2>
+                  <p style="font-size:0.7rem; color:var(--text-dim);">IMMUTABLE LOGS OF ALL TERMINAL INTERACTIONS</p>
+              </div>
+              <div id="historyLog" class="request-list" style="max-height: 500px; overflow-y: auto;">
+                  <!-- History entries -->
+              </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- CONFIRMATION MODAL -->
+  <dialog id="confirmModal" class="modal industrial-modal">
+    <div class="modal-content success-content" style="border-color: var(--secondary); max-width: 500px;">
+      <div class="modal-header">
+        <span class="kicker" style="color: var(--secondary);">Security Override</span>
+        <h2 id="confirmTitle">Confirm Action</h2>
+      </div>
+      <div class="modal-body" style="margin: 1.5rem 0;">
+        <p id="confirmMessage" class="terminal-text" style="font-size: 0.9rem; line-height: 1.4; color: var(--text-dim);"></p>
+      </div>
+      <div class="modal-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <button id="confirmCancelBtn" class="btn-outline">Abort</button>
+        <button id="confirmProceedBtn" class="btn-primary" style="background: var(--secondary); border-color: var(--secondary); color: white;">Proceed</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+  <script src="/static/superior.js"></script>
+</body>
+</html>
