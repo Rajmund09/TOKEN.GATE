@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOKEN.GATE | Hoster Terminal</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body class="admin-page">
+  <!-- TERMINAL BOOT LOADER -->
+  <div id="bootLoader" class="boot-loader">
+    <div class="boot-content">
+      <div class="loader"></div>
+      <p class="terminal-text">ESTABLISHING HOSTER UPLINK...</p>
+    </div>
+  </div>
+
+  <div class="grid-overlay"></div>
+  
+  <nav class="nav-bar">
+    <div class="logo">TERMINAL.GATE <span style="font-size: 0.6em; color: var(--text-dim);">// HOSTER</span></div>
+    <div class="nav-actions">
+      <a href="/" class="nav-btn">Public Portal</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section id="adminSection" class="view-section active">
+      <!-- LOGIN PORTAL -->
+      <div id="adminLogin" class="login-container fade-up">
+        <div class="panel login-panel stagger-enter">
+          <div class="panel-header">
+            <span class="kicker">Authorization Required</span>
+            <h2>Hoster Secure Sync</h2>
+          </div>
+          <form id="adminLoginForm" class="industrial-form">
+            <input type="hidden" name="protocol" value="hoster">
+            <div class="form-group">
+              <label for="adminUser">Event ID</label>
+              <input type="text" id="adminUser" name="username" placeholder="EVT-XXXX" required>
+            </div>
+            <div class="form-group">
+              <label for="adminPass">Access Key</label>
+              <input type="password" id="adminPass" name="password" placeholder="••••" required>
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">Connect to Session</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="adminDashboard" class="dashboard-container hidden">
+        <header class="dashboard-header stagger-enter">
+          <div class="user-info">
+            <div class="status-indicator online"></div>
+            <span id="adminNameDisplay" class="terminal-text">SESSION ACTIVE</span>
+          </div>
+          <div class="header-actions">
+            <button id="logoutBtn" class="btn-outline">Disconnect</button>
+          </div>
+        </header>
+
+        <div id="mainDashboardView" class="dashboard-grid">
+          <!-- GUEST REQUESTS PANEL -->
+          <div class="panel list-panel stagger-enter" style="animation-delay: 0.1s;">
+            <div class="panel-header">
+              <div class="header-with-action">
+                <h2>Guest Transmissions</h2>
+                <input type="text" id="adminSearch" placeholder="Filter identities..." class="search-compact">
+              </div>
+            </div>
+            <div id="requestsList" class="request-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- VERIFICATION PANEL & CONSOLE -->
+          <div class="control-panel stagger-enter" style="animation-delay: 0.2s;">
+            <div class="panel" style="margin-bottom: 2rem;">
+              <div class="panel-header">
+                <span class="kicker">Signal Verification</span>
+                <h2>Gate Controller</h2>
+              </div>
+              <div class="scanner-box">
+                <div id="reader" style="width: 100%; border-radius: 0; overflow: hidden;"></div>
+                <div class="scan-line"></div>
+                <div class="scan-target">
+                  <div class="corner tl"></div><div class="corner tr"></div>
+                  <div class="corner bl"></div><div class="corner br"></div>
+                </div>
+                <div id="scannerStatus" class="scanner-text">AWAITING SIGNAL</div>
+              </div>
+              <div class="manual-verify">
+                <input type="text" id="manualVerifyToken" placeholder="Manual Token Entry">
+                <button id="verifyTokenBtn" class="btn-primary" style="margin-top: 1rem; width: 100%;">Verify Access</button>
+              </div>
+            </div>
+
+            <div class="panel console-panel">
+              <div class="panel-header">
+                <span class="kicker">Live Feed</span>
+                <h2>System Console</h2>
+              </div>
+              <div id="verifyLog" class="verify-log terminal-text" style="background: rgba(0,0,0,0.5); padding: 1rem; border: 1px solid var(--border); height: 200px; overflow-y: auto; font-size: 0.7rem;">
+                <!-- Log entries -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="/static/hoster.js"></script>
+</body>
+</html>
