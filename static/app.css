@@ -37,19 +37,19 @@
 }
 
 :root {
-  --bg: #030303;
-  --surface: #0a0a0a;
-  --surface-light: #151515;
-  --accent: #00f2ff;
-  --accent-dim: rgba(0, 242, 255, 0.2);
+  --bg: #020804; /* Very dark green/black */
+  --surface: #031008;
+  --surface-light: #061a0f;
+  --accent: #00ff88; /* Terminal Green */
+  --accent-dim: rgba(0, 255, 136, 0.2);
   --secondary: #ff0055;
   --success: #00ff88;
   --warning: #ffcc00;
-  --text: #ffffff;
-  --text-dim: #a0a0a0;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-accent: rgba(0, 242, 255, 0.3);
-  --shadow-neon: 0 0 15px rgba(0, 242, 255, 0.2);
+  --text: #e0ffe8;
+  --text-dim: #60a080;
+  --border: rgba(0, 255, 136, 0.15);
+  --border-accent: rgba(0, 255, 136, 0.4);
+  --shadow-neon: 0 0 15px rgba(0, 255, 136, 0.2);
   --shadow-deep: 0 20px 40px rgba(0, 0, 0, 0.8);
   --radius: 0px; /* Industrial sharp edges */
 }
@@ -61,19 +61,22 @@
   -webkit-font-smoothing: antialiased;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
+
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
   background-color: var(--bg);
   color: var(--text);
   overflow-x: hidden;
   line-height: 1.6;
   min-height: 100vh;
+  text-shadow: 0 0 2px var(--accent-dim);
 }
 
 h1, h2, h3, .kicker, .logo, .btn-primary, .terminal-text {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
 }
 
 /* --- DECORATIVE LAYERS --- */
@@ -84,31 +87,37 @@ h1, h2, h3, .kicker, .logo, .btn-primary, .terminal-text {
   background-image: 
     linear-gradient(var(--border) 1px, transparent 1px),
     linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 50px 50px;
-  mask-image: radial-gradient(circle at 50% 50%, black, transparent 90%);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
   z-index: -1;
-  opacity: 0.3;
+  opacity: 0.15;
 }
 
-.noise-overlay {
+body::before {
+  content: " ";
+  display: block;
   position: fixed;
-  inset: 0;
-  background: url('https://grainy-gradients.vercel.app/noise.svg');
-  opacity: 0.05;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 9999;
+  background-size: 100% 2px, 3px 100%;
   pointer-events: none;
-  z-index: 9998;
 }
 
 body::after {
   content: " ";
   display: block;
   position: fixed;
-  inset: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
-  z-index: 9999;
-  background-size: 100% 4px, 3px 100%;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%);
+  z-index: 9998;
   pointer-events: none;
-  opacity: 0.2;
 }
 
 /* --- NAV BAR --- */
@@ -226,18 +235,17 @@ body::after {
 .panel::before {
   content: "";
   position: absolute;
-  top: -1px;
-  left: -1px;
-  width: 20px;
-  height: 20px;
-  border-top: 2px solid var(--accent);
-  border-left: 2px solid var(--accent);
-  opacity: 0;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 100%;
+  background: var(--accent);
+  opacity: 0.1;
   transition: 0.3s;
 }
 
 .panel:hover::before {
-  opacity: 1;
+  opacity: 0.3;
 }
 
 .kicker {
@@ -304,42 +312,28 @@ input:focus, select:focus {
 .btn-primary {
   background: var(--accent);
   color: #000;
-  border: none;
+  border: 1px solid var(--accent);
   padding: 1.2rem;
-  font-weight: 900;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
   position: relative;
-  overflow: hidden;
+  text-shadow: none;
 }
 
 .btn-primary:hover {
-  background: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+  background: var(--bg);
+  color: var(--accent);
+  box-shadow: inset 0 0 15px rgba(0, 255, 136, 0.4);
 }
 
 .btn-primary:active {
-  transform: translateY(0);
-}
-
-.btn-primary::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  transition: 0.5s;
-}
-
-.btn-primary:hover::after {
-  left: 100%;
+  background: var(--accent);
+  color: #000;
 }
 
 .btn-outline {
@@ -361,19 +355,14 @@ input:focus, select:focus {
 
 /* --- DASHBOARD GRID --- */
 .dashboard-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
   gap: 2rem;
   align-items: start;
 }
 
-.list-panel {
-  flex: 1;
-  min-width: 350px;
-}
-
-.control-panel {
-  width: 400px;
+.list-panel, .control-panel, .console-panel {
+  width: 100%;
 }
 
 @media (max-width: 1100px) {
@@ -645,12 +634,13 @@ select option {
   transform: translateX(0);
 }
 
-/* --- ANIMATIONS --- */
+/* --- ANIMATIONS & EFFECTS --- */
 
 @keyframes scanMove {
-  0% { top: 0; }
-  50% { top: 100%; }
-  100% { top: 0; }
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
 }
 
 @keyframes slideIn {
@@ -662,6 +652,40 @@ select option {
   0% { box-shadow: 0 0 5px var(--accent-dim); }
   50% { box-shadow: 0 0 20px var(--accent-dim); }
   100% { box-shadow: 0 0 5px var(--accent-dim); }
+}
+
+/* Staggered Entrance */
+.stagger-enter {
+  opacity: 0;
+  animation: fadeUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Glitch Hover */
+.glitch-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.glitch-hover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transform: skewX(-20deg);
+  transition: 0s;
+}
+
+.glitch-hover:hover::before {
+  left: 150%;
+  transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 /* --- RESPONSIVENESS --- */
