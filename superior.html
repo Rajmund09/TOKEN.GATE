@@ -4,23 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TOKEN.GATE | Superior Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css">
 </head>
-<body class="admin-page">
-  <!-- TERMINAL BOOT LOADER -->
+<body class="admin-page theme-root">
   <div id="bootLoader" class="boot-loader">
     <div class="boot-content">
-      <div class="loader"></div>
-      <p class="terminal-text" style="color: var(--secondary);">ESTABLISHING ROOT UPLINK...</p>
+      <p class="terminal-text">INITIALIZING ROOT INTERFACE<span class="typewriter-cursor"></span></p>
     </div>
   </div>
 
-  <div class="grid-overlay"></div>
+
   
   <nav class="nav-bar">
-    <div class="logo" style="color: var(--secondary); text-shadow: 0 0 10px rgba(255,0,85,0.3);">TERMINAL.GATE <span style="font-size: 0.6em; color: var(--text-dim);">// ROOT</span></div>
+    <div class="logo">
+      <span class="root-text logo-text">ROOT_ADMIN</span>
+      <span class="tech-label" style="border-color: var(--status-rejected); color: var(--status-rejected); margin-left: 10px;">[ROOT_LEVEL_7]</span>
+      <span style="font-size:0.6rem; color:var(--text-main); margin-left:0.5rem;">ROOT_ACCESS</span>
+    </div>
     <div class="nav-actions">
+      <button id="themeToggle" class="nav-btn" title="Toggle Theme"></button>
       <a href="/" class="nav-btn">Public Portal</a>
+      <a href="/host-registration" class="nav-btn">Host Event</a>
     </div>
   </nav>
 
@@ -30,7 +37,7 @@
       <div id="adminLogin" class="login-container fade-up">
         <div class="panel login-panel stagger-enter" style="border-top-color: var(--secondary);">
           <div class="panel-header">
-            <span class="kicker" style="color: var(--secondary);">Root Authorization Required</span>
+            <span class="kicker">Root Authorization Required</span>
             <h2>Superior Override</h2>
           </div>
           <form id="adminLoginForm" class="industrial-form">
@@ -43,24 +50,45 @@
               <label for="adminPass">Master Access Key</label>
               <input type="password" id="adminPass" name="password" placeholder="••••" required>
             </div>
-            <button type="submit" class="btn-primary" style="margin-top: 1rem; background: var(--secondary); border-color: var(--secondary); color: white;">Bypass Mainframe</button>
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">Bypass Mainframe</button>
           </form>
         </div>
       </div>
 
       <!-- DASHBOARD -->
       <div id="adminDashboard" class="dashboard-container hidden">
-        <header class="dashboard-header stagger-enter">
+        <header class="dashboard-header fade-up">
           <div class="user-info">
-            <div class="status-indicator online" style="background: var(--secondary); box-shadow: 0 0 10px var(--secondary);"></div>
-            <span id="adminNameDisplay" class="terminal-text">ROOT_ADMIN</span>
-            <span id="rootBadge" class="badge">ROOT_ACCESS</span>
+            <div class="status-indicator online" style="background: var(--status-approved); box-shadow: 0 0 10px var(--status-approved);"></div>
+            <span id="adminNameDisplay" class="terminal-text" style="font-size: 1.2rem;">ROOT_CONTROL_NODE</span>
+            <span class="tech-label" style="background: var(--text-bright); color: var(--bg-surface);">MASTER_UPLINK</span>
           </div>
           <div class="header-actions">
-            <button id="purgeAllBtn" class="btn-outline" style="color:var(--secondary); border-color:var(--secondary); font-size:0.7rem;">MASTER PURGE</button>
-            <button id="logoutBtn" class="btn-outline">Shutdown Terminal</button>
+            <button id="masterPurgeBtn" class="btn-primary" style="background: var(--status-rejected); border-color: var(--status-rejected); color: white; font-size: 0.75rem;">MASTER PURGE</button>
+            <button id="logoutBtn" class="btn-outline" style="font-size: 0.75rem;">SHUTDOWN</button>
           </div>
         </header>
+
+        <!-- ROOT STATS OVERVIEW -->
+        <div class="dashboard-grid stagger-enter" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
+          <div class="panel" style="padding: 1.5rem; text-align: center;">
+            <span class="kicker">Active Nodes</span>
+            <div id="activeNodesCount" class="terminal-text" style="font-size: 2.5rem; margin: 0.5rem 0;">0</div>
+            <p class="dim-text" style="font-size: 0.7rem;">LIVE SESSIONS</p>
+          </div>
+          <div class="panel" style="padding: 1.5rem; text-align: center;">
+            <span class="kicker">Total Signals</span>
+            <div id="totalSignalsCount" class="terminal-text" style="font-size: 2.5rem; margin: 0.5rem 0;">0</div>
+            <p class="dim-text" style="font-size: 0.7rem;">AUDIT LOG COUNT</p>
+          </div>
+          <div class="panel" style="padding: 1.5rem; text-align: center;">
+            <span class="kicker">System Integrity</span>
+            <div class="terminal-text" style="font-size: 1.5rem; margin: 0.5rem 0; color: var(--status-approved);">100%</div>
+            <div style="width: 100%; height: 8px; background: var(--bg-surface-elevated); border: 1px solid var(--border); margin-top: 1rem; position: relative;">
+              <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: var(--status-approved);"></div>
+            </div>
+          </div>
+        </div>
 
         <div class="dashboard-grid">
           <!-- GLOBAL EVENTS VIEW -->
@@ -101,12 +129,13 @@
       </div>
       <div class="modal-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
         <button id="confirmCancelBtn" class="btn-outline">Abort</button>
-        <button id="confirmProceedBtn" class="btn-primary" style="background: var(--secondary); border-color: var(--secondary); color: white;">Proceed</button>
+        <button id="confirmProceedBtn" class="btn-primary" style="background: rgba(218, 54, 51, 0.1); border-color: var(--status-rejected); color: var(--status-rejected);">Proceed</button>
       </div>
     </div>
   </dialog>
 
   <div id="toast" class="toast"></div>
+  <script src="/static/theme.js"></script>
   <script src="/static/superior.js"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ const UI = {
   adminDashboard: document.getElementById('adminDashboard'),
   eventsList: document.getElementById('eventsList'),
   historyLog: document.getElementById('historyLog'),
-  purgeAllBtn: document.getElementById('purgeAllBtn'),
+  purgeAllBtn: document.getElementById('masterPurgeBtn'),
   logoutBtn: document.getElementById('logoutBtn'),
   toast: document.getElementById('toast'),
   confirmModal: document.getElementById('confirmModal'),
@@ -25,11 +25,25 @@ const state = {
 
 // --- UTILS ---
 
+const showLoader = (msg = "SYNCING PROTOCOLS...") => {
+  const loader = document.getElementById('bootLoader');
+  const text = loader?.querySelector('.terminal-text');
+  if (text) text.textContent = msg;
+  loader?.classList.remove('hidden');
+};
+
+const hideLoader = () => {
+  const loader = document.getElementById('bootLoader');
+  loader?.classList.add('hidden');
+};
+
 const api = async (url, options = {}) => {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  showLoader(options.loaderMsg || "TRANSMITTING DATA...");
   try {
     const response = await fetch(url, { ...options, headers });
     const contentType = response.headers.get("content-type");
+    hideLoader();
     if (contentType && contentType.includes("application/json")) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
@@ -39,6 +53,7 @@ const api = async (url, options = {}) => {
       return {};
     }
   } catch (err) {
+    hideLoader();
     if (err.message.includes('Network')) throw new Error('Network Transmission Failed');
     throw err;
   }
@@ -116,6 +131,8 @@ const handleLogout = async () => {
 const fetchAllEvents = async () => {
   try {
     const data = await api('/api/events');
+    const countEl = document.getElementById('activeNodesCount');
+    if (countEl) countEl.textContent = data.events.length;
     renderEvents(data.events);
   } catch (err) {
     showToast(err.message);
@@ -126,12 +143,12 @@ const renderEvents = (events) => {
   UI.eventsList.innerHTML = events.length ? events.map((evt, i) => `
     <div class="request-item stagger-enter" style="animation-delay: ${i * 0.05}s">
       <div class="request-info">
-        <h4>${evt.event_name} <span class="badge" style="background:var(--accent-dim);">${evt.event_id}</span></h4>
-        <p>Manager: ${evt.manager_name} (${evt.manager_email})</p>
+        <h4>${evt.event_name} <span class="badge">${evt.event_id}</span></h4>
+        <p>${evt.manager_name} (${evt.manager_email})</p>
         <p class="dim-text">Created: ${formatDate(evt.created_at)}</p>
       </div>
       <div class="request-actions">
-        <button class="btn-outline" style="border-color:var(--secondary); color:var(--secondary);" onclick="deleteEvent('${evt.event_id}')">PURGE SESSION</button>
+        <button class="btn-outline btn-purge" style="padding: 0.5rem 1rem; font-size:0.7rem;" onclick="deleteEvent('${evt.event_id}')">PURGE SESSION</button>
       </div>
     </div>
   `).join('') : '<div class="dim-text" style="padding:2rem; text-align:center;">NO ACTIVE SESSIONS</div>';
@@ -155,6 +172,8 @@ window.deleteEvent = async (eid) => {
 const fetchHistory = async () => {
   try {
     const data = await api('/api/terminal/history');
+    const countEl = document.getElementById('totalSignalsCount');
+    if (countEl) countEl.textContent = data.history.length;
     renderHistory(data.history);
   } catch (err) {
     showToast(err.message);
@@ -171,25 +190,25 @@ const renderHistory = (logs) => {
     const date = new Date(log.timestamp).toLocaleString();
     let detailsStr = '';
     if (log.action === 'EVENT_CREATED') {
-        detailsStr = `Event <strong>${log.details.event_name}</strong> created by ${log.details.manager}`;
+        detailsStr = `<span style="color:var(--status-pending);">[INIT]</span> Event <strong>${log.details.event_name}</strong> created by ${log.details.manager}`;
     } else if (log.action === 'GUEST_REGISTERED') {
-        detailsStr = `Guest <strong>${log.details.name}</strong> (${log.details.email}) registered for <strong>${log.details.event_name}</strong>`;
+        detailsStr = `<span style="color:var(--accent-primary);">[REG]</span> Guest <strong>${log.details.name}</strong> (${log.details.email}) registered for <strong>${log.details.event_name}</strong>`;
     } else if (log.action === 'GATE_ENTRY') {
-        detailsStr = `Entry Granted: <strong>${log.details.name}</strong> for <strong>${log.details.event_name}</strong>`;
+        detailsStr = `<span style="color:var(--status-approved);">[ENTRY]</span> Entry Granted: <strong>${log.details.name}</strong> for <strong>${log.details.event_name}</strong>`;
     } else if (log.action === 'SYSTEM_WIPE') {
-        detailsStr = `<span style="color:var(--secondary);">TOTAL SYSTEM WIPE BY ROOT ADMIN</span>`;
+        detailsStr = `<span style="color:var(--status-rejected);">[CRITICAL]</span> TOTAL SYSTEM WIPE BY ROOT ADMIN`;
     } else {
-        detailsStr = JSON.stringify(log.details);
+        detailsStr = `<span style="color:var(--text-dim);">[LOG]</span> ${JSON.stringify(log.details)}`;
     }
 
     return `
-      <div class="request-card" style="border-bottom:1px solid rgba(255,255,255,0.05); padding:1rem 0;">
+      <div class="request-card">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div>
-            <span class="badge" style="font-size:0.5rem; background:rgba(0,242,255,0.1); color:var(--accent);">${log.action}</span>
-            <p style="margin-top:0.5rem; font-size:0.85rem;">${detailsStr}</p>
+            <span class="badge" style="font-size:0.5rem;">${log.action}</span>
+            <p style="margin-top:0.5rem; font-size:0.85rem; font-family:'JetBrains Mono', monospace;">${detailsStr}</p>
           </div>
-          <span style="font-size:0.6rem; color:var(--secondary); font-family:monospace;">${date}</span>
+          <span class="dim-text" style="font-size:0.6rem; font-family:monospace;">${date}</span>
         </div>
       </div>
     `;
@@ -217,6 +236,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   UI.logoutBtn.onclick = handleLogout;
   UI.purgeAllBtn.onclick = purgeAllData;
 
+  // SYSTEM BOOT COMPLETE
+  setTimeout(() => {
+    document.getElementById('bootLoader')?.classList.add('hidden');
+  }, 1000);
+
   try {
     const data = await api('/api/session');
     if (data.authenticated && data.owner) {
@@ -226,8 +250,4 @@ document.addEventListener('DOMContentLoaded', async () => {
       fetchHistory();
     }
   } catch (err) {}
-
-  setTimeout(() => {
-    document.getElementById('bootLoader')?.classList.add('hidden');
-  }, 800);
 });
