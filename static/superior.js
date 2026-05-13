@@ -39,11 +39,11 @@ const hideLoader = () => {
 
 const api = async (url, options = {}) => {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  showLoader(options.loaderMsg || "TRANSMITTING DATA...");
+  if (!options.silent) showLoader(options.loaderMsg || "TRANSMITTING DATA...");
   try {
     const response = await fetch(url, { ...options, headers });
     const contentType = response.headers.get("content-type");
-    hideLoader();
+    if (!options.silent) hideLoader();
     if (contentType && contentType.includes("application/json")) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
@@ -53,7 +53,7 @@ const api = async (url, options = {}) => {
       return {};
     }
   } catch (err) {
-    hideLoader();
+    if (!options.silent) hideLoader();
     if (err.message.includes('Network')) throw new Error('Network Transmission Failed');
     throw err;
   }
@@ -128,14 +128,14 @@ const handleLogout = async () => {
 
 // --- GLOBAL REGISTRY ---
 
-const fetchAllEvents = async () => {
+const fetchAllEvents = async (options = {}) => {
   try {
-    const data = await api('/api/events');
+    const data = await api('/api/events', options);
     const countEl = document.getElementById('activeNodesCount');
     if (countEl) countEl.textContent = data.events.length;
     renderEvents(data.events);
   } catch (err) {
-    showToast(err.message);
+    if (!options.silent) showToast(err.message);
   }
 };
 
@@ -169,14 +169,14 @@ window.deleteEvent = async (eid) => {
 
 // --- AUDIT VAULT ---
 
-const fetchHistory = async () => {
+const fetchHistory = async (options = {}) => {
   try {
-    const data = await api('/api/terminal/history');
+    const data = await api('/api/terminal/history', options);
     const countEl = document.getElementById('totalSignalsCount');
     if (countEl) countEl.textContent = data.history.length;
     renderHistory(data.history);
   } catch (err) {
-    showToast(err.message);
+    if (!options.silent) showToast(err.message);
   }
 };
 
@@ -242,12 +242,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   }, 1000);
 
   try {
-    const data = await api('/api/session');
+    const data = await api('/api/session', { silent: true });
     if (data.authenticated && data.owner) {
+      state.authenticated = true;
       UI.adminLogin.classList.add('hidden');
       UI.adminDashboard.classList.remove('hidden');
       fetchAllEvents();
       fetchHistory();
     }
   } catch (err) {}
+
+  // Periodic polling for updates
+  setInterval(() => {
+    if (state.authenticated) {
+      fetchAllEvents({ silent: true });
+      fetchHistory({ silent: true });
+    }
+  }, 10000);
 });

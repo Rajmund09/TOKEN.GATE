@@ -874,10 +874,12 @@ select:-webkit-autofill:focus {
   }
 
   .toast {
-    bottom: 100px; /* Above bottom nav */
+    bottom: auto;
+    top: 2rem; /* Above logo/header */
     right: 1rem;
     left: 1rem;
-    transform: translateY(200%);
+    transform: translateY(-200%);
+    box-shadow: 6px 6px 0px var(--border);
   }
   .toast.show {
     transform: translateY(0);

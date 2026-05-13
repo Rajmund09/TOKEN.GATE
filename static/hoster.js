@@ -40,11 +40,11 @@ const hideLoader = () => {
 
 const api = async (url, options = {}) => {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  showLoader(options.loaderMsg || "TRANSMITTING DATA...");
+  if (!options.silent) showLoader(options.loaderMsg || "TRANSMITTING DATA...");
   try {
     const response = await fetch(url, { ...options, headers });
     const contentType = response.headers.get("content-type");
-    hideLoader();
+    if (!options.silent) hideLoader();
     if (contentType && contentType.includes("application/json")) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
@@ -54,7 +54,7 @@ const api = async (url, options = {}) => {
       return {};
     }
   } catch (err) {
-    hideLoader();
+    if (!options.silent) hideLoader();
     if (err.message.includes('Network')) throw new Error('Network Transmission Failed');
     throw err;
   }
@@ -104,6 +104,7 @@ const handleLogin = async (e) => {
 
 const handleLogout = async () => {
   try {
+    localStorage.removeItem('tg_hoster_logs');
     await api('/api/logout', { method: 'POST' });
     window.location.reload();
   } catch (err) {
@@ -113,13 +114,13 @@ const handleLogout = async () => {
 
 // --- REQUESTS ---
 
-const fetchRequests = async () => {
+const fetchRequests = async (options = {}) => {
   try {
-    const data = await api('/api/customers');
+    const data = await api('/api/customers', options);
     state.requests = data.customers;
     renderRequests();
   } catch (err) {
-    showToast(err.message);
+    if (!options.silent) showToast(err.message);
   }
 };
 
@@ -260,6 +261,20 @@ const verifyManual = async () => {
   UI.manualVerifyToken.value = '';
 };
 
+const saveLogs = () => {
+  if (UI.verifyLog) {
+    localStorage.setItem('tg_hoster_logs', UI.verifyLog.innerHTML);
+  }
+};
+
+const loadLogs = () => {
+  const saved = localStorage.getItem('tg_hoster_logs');
+  if (saved && UI.verifyLog) {
+    UI.verifyLog.innerHTML = saved;
+    UI.verifyLog.scrollTop = UI.verifyLog.scrollHeight;
+  }
+};
+
 const logVerify = (msg, type, isFirst = true) => {
   if (!UI.verifyLog) return;
   const entry = document.createElement('div');
@@ -282,6 +297,7 @@ const logVerify = (msg, type, isFirst = true) => {
   
   UI.verifyLog.appendChild(entry);
   UI.verifyLog.scrollTop = UI.verifyLog.scrollHeight;
+  saveLogs();
 };
 
 // --- INIT ---
@@ -292,6 +308,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   UI.adminSearch.oninput = renderRequests;
   UI.verifyTokenBtn.onclick = verifyManual;
 
+  loadLogs();
+
   // SYSTEM BOOT COMPLETE
   setTimeout(() => {
     document.getElementById('bootLoader')?.classList.add('hidden');
@@ -299,8 +317,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Check existing session
   try {
-    const data = await api('/api/session');
+    const data = await api('/api/session', { silent: true });
     if (data.authenticated && data.event_id) {
+      state.authenticated = true;
       UI.adminLogin.classList.add('hidden');
       UI.adminDashboard.classList.remove('hidden');
       UI.adminNameDisplay.textContent = data.event_name;
@@ -308,4 +327,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       initScanner();
     }
   } catch (err) {}
+
+  // Periodic polling for updates
+  setInterval(() => {
+    if (state.authenticated) {
+      fetchRequests({ silent: true });
+    }
+  }, 10000);
 });
