@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 
 import qrcode
 from flask import Flask, Response, jsonify, request, send_file, session, send_from_directory
@@ -209,25 +210,34 @@ def generate_token(prefix: str = "TG-") -> str:
     return f"{prefix}{timestamp}-{random_part}"
 
 
-def send_email(to_email: str, subject: str, body_html: str) -> None:
+def send_email(to_email: str, subject: str, body_html: str, attachment: io.BytesIO = None) -> None:
     """Dispatches an email in a background thread to prevent blocking the UI."""
-    thread = threading.Thread(target=_send_email_sync, args=(to_email, subject, body_html))
+    thread = threading.Thread(target=_send_email_sync, args=(to_email, subject, body_html, attachment))
     thread.daemon = True
     thread.start()
 
 
-def _send_email_sync(to_email: str, subject: str, body_html: str) -> None:
+def _send_email_sync(to_email: str, subject: str, body_html: str, attachment: io.BytesIO = None) -> None:
     """Real email logic executed in background. Includes timeouts and robust error handling."""
     if not SMTP_USER or not SMTP_PASS:
         app.logger.info(f"\n[MOCK EMAIL] TO: {to_email}\nSUBJECT: {subject}\n")
         return
 
     try:
-        msg = MIMEMultipart("alternative")
+        msg = MIMEMultipart("related")
         msg["Subject"] = subject
         msg["From"] = EMAIL_FROM
         msg["To"] = to_email
-        msg.attach(MIMEText(body_html, "html"))
+        
+        msg_alt = MIMEMultipart("alternative")
+        msg.attach(msg_alt)
+        msg_alt.attach(MIMEText(body_html, "html"))
+        
+        if attachment:
+            img = MIMEImage(attachment.read(), _subtype="png")
+            img.add_header('Content-ID', '<qr_pass>')
+            img.add_header('Content-Disposition', 'inline; filename="qr_pass.png"')
+            msg.attach(img)
 
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
             server.set_debuglevel(0)
@@ -241,17 +251,17 @@ def _send_email_sync(to_email: str, subject: str, body_html: str) -> None:
 def notify_event_creation(manager_email: str, manager_name: str, event_name: str, event_id: str) -> None:
     subject = f"TOKEN.GATE | Session Initialized: {event_name}"
     html = f"""
-    <div style="font-family: sans-serif; background: #050505; color: #e0e0e0; padding: 40px; border-radius: 8px;">
-        <h2 style="color: #00f2ff;">TERMINAL INITIALIZED</h2>
-        <p>Greetings {manager_name},</p>
+    <div style="font-family: 'Courier New', monospace; background: #06080b; color: #c9d1d9; padding: 40px; border-radius: 4px; border: 1px solid #30363d;">
+        <h2 style="color: #00e5ff; border-bottom: 1px dashed #30363d; padding-bottom: 10px;">TERMINAL INITIALIZED</h2>
+        <p>Greetings <span style="color: #ffffff;">{manager_name}</span>,</p>
         <p>Your event session <strong>{event_name}</strong> has been successfully registered on the global terminal.</p>
-        <div style="background: rgba(0,242,255,0.1); border: 1px solid #00f2ff; padding: 20px; margin: 20px 0;">
-            <p style="margin: 0; font-size: 0.8rem; color: #888;">YOUR EVENT ID:</p>
-            <code style="font-size: 1.5rem; color: #00f2ff; letter-spacing: 2px;">{event_id}</code>
+        <div style="background: rgba(0, 229, 255, 0.05); border: 1px solid #00e5ff; padding: 25px; margin: 20px 0; text-align: center;">
+            <p style="margin: 0 0 10px 0; font-size: 0.7rem; color: #8b949e; letter-spacing: 1px;">YOUR SECURE EVENT ID</p>
+            <code style="font-size: 1.8rem; color: #00e5ff; letter-spacing: 2px; font-weight: bold;">{event_id}</code>
         </div>
-        <p>Use this ID and your security key to manage access requests.</p>
-        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
-        <p style="font-size: 0.7rem; color: #666;">TOKEN.GATE Industrial Access Systems</p>
+        <p style="font-size: 0.8rem; color: #8b949e;">Keep this ID secure. It is required for all administrative access to this session.</p>
+        <hr style="border: 0; border-top: 1px solid #30363d; margin: 25px 0;">
+        <p style="font-size: 0.7rem; color: #8b949e;">SYSTEM TIME: {utc_now().strftime('%Y-%m-%d %H:%M:%S')} UTC</p>
     </div>
     """
     send_email(manager_email or "admin@local.host", subject, html)
@@ -259,37 +269,51 @@ def notify_event_creation(manager_email: str, manager_name: str, event_name: str
 
 def notify_request_status(email: str, name: str, event_name: str, status: str, token: str | None = None) -> None:
     subject = f"TOKEN.GATE | Request {status.upper()}: {event_name}"
-    color = "#00ff88" if status == "approved" else "#ff0055"
-    if status == "pending": color = "#ffcc00"
+    color = "#238636" if status == "approved" else "#da3633"
+    if status == "pending": color = "#d29922"
     
     qr_link = f"{request.host_url}api/qr/{token}" if token else "#"
+    attachment_buffer = None
     
     html = f"""
-    <div style="font-family: sans-serif; background: #050505; color: #e0e0e0; padding: 40px; border-radius: 8px; border-left: 5px solid {color};">
-        <h2 style="color: {color}; text-transform: uppercase;">Request {status}</h2>
-        <p>Identity: <strong>{name}</strong></p>
-        <p>Session: <strong>{event_name}</strong></p>
-        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+    <div style="font-family: 'Courier New', monospace; background: #06080b; color: #c9d1d9; padding: 40px; border-radius: 4px; border-left: 5px solid {color}; border-top: 1px solid #30363d; border-right: 1px solid #30363d; border-bottom: 1px solid #30363d;">
+        <h2 style="color: {color}; text-transform: uppercase; border-bottom: 1px dashed #30363d; padding-bottom: 10px;">Access {status}</h2>
+        <p>Identity: <strong style="color: #ffffff;">{name}</strong></p>
+        <p>Session: <strong style="color: #ffffff;">{event_name}</strong></p>
         """
     if status == "approved":
+        attachment_buffer = make_qr_png(token)
         html += f"""
-        <p>Your access token has been generated. Scan the code below or use the manual ID at the gate.</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <img src="{qr_link}" width="200" height="200" style="background: #fff; padding: 10px; border-radius: 4px;">
-            <p style="margin-top: 10px; font-family: monospace; font-size: 1.2rem; color: #00f2ff;">{token}</p>
+        <p>Your security clearance has been <strong style="color: #238636;">GRANTED</strong>. Below is your official access token and QR pass.</p>
+        
+        <div style="text-align: center; margin: 30px 0; padding: 25px; background: #ffffff; border-radius: 4px; display: inline-block; width: 100%; box-sizing: border-box;">
+            <p style="margin-bottom: 15px; font-size: 0.7rem; color: #333; font-weight: bold; letter-spacing: 1px;">OFFICIAL ACCESS PASS</p>
+            <img src="cid:qr_pass" alt="Your QR Pass" width="250" height="250" style="display: block; margin: 0 auto;">
+            <p style="margin-top: 20px; font-size: 1.5rem; color: #000; font-weight: bold; letter-spacing: 3px;">{token}</p>
+        </div>
+
+        <div style="background: rgba(210, 153, 34, 0.05); padding: 20px; border-radius: 4px; margin-top: 25px; border-left: 3px solid #d29922;">
+            <h4 style="margin: 0 0 10px 0; color: #d29922; text-transform: uppercase;">Instructions</h4>
+            <p style="margin: 0; font-size: 0.85rem; color: #8b949e;">Present the QR code above at the terminal entrance. If the image is not displaying, you can use the manual code <strong>{token}</strong> or <a href="{qr_link}" style="color: #00e5ff; text-decoration: underline;">download the PNG directly</a>.</p>
         </div>
         """
     elif status == "pending":
-        html += "<p>Your identity check is in progress. You will be notified once the manager approves your transmission.</p>"
+        html += f"""
+        <div style="background: rgba(210, 153, 34, 0.05); padding: 20px; border-radius: 4px; margin-top: 25px; border-left: 3px solid #d29922;">
+            <p style="margin: 0; color: #c9d1d9;">Your identity signal has been received and is currently <strong style="color: #d29922;">UNDER REVIEW</strong>. You will be notified once the hoster processes your transmission.</p>
+        </div>"""
     else:
-        html += "<p>Your access request was rejected by the session manager. Identity mismatch or security restriction.</p>"
+        html += f"""
+        <div style="background: rgba(218, 54, 51, 0.05); padding: 20px; border-radius: 4px; margin-top: 25px; border-left: 3px solid #da3633;">
+            <p style="margin: 0; color: #c9d1d9;">Your access request was <strong style="color: #da3633;">REJECTED</strong> by the session manager due to security protocol mismatch or restricted capacity.</p>
+        </div>"""
         
     html += f"""
-        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
-        <p style="font-size: 0.7rem; color: #666;">SYSTEM TIME: {utc_now().strftime('%Y-%m-%d %H:%M:%S')} UTC</p>
+        <hr style="border: 0; border-top: 1px solid #30363d; margin: 25px 0;">
+        <p style="font-size: 0.7rem; color: #8b949e;">SYSTEM TIME: {utc_now().strftime('%Y-%m-%d %H:%M:%S')} UTC</p>
     </div>
     """
-    send_email(email, subject, html)
+    send_email(email, subject, html, attachment_buffer)
 
 
 def notify_identity_purged(email: str, name: str, event_name: str) -> None:
@@ -320,6 +344,41 @@ def notify_event_purged(manager_email: str, manager_name: str, event_name: str) 
     </div>
     """
     send_email(manager_email, subject, html)
+
+
+def notify_hoster_new_guest(manager_email: str, manager_name: str, guest_name: str, guest_email: str, event_name: str) -> None:
+    subject = f"TOKEN.GATE | Action Required: New Guest Request for {event_name}"
+    html = f"""
+    <div style="font-family: sans-serif; background: #050505; color: #e0e0e0; padding: 40px; border-radius: 8px; border-left: 5px solid #ffcc00;">
+        <h2 style="color: #ffcc00; text-transform: uppercase;">New Registration Pending</h2>
+        <p>Greetings {manager_name},</p>
+        <p>A new guest has requested access to your session <strong>{event_name}</strong>.</p>
+        <div style="background: rgba(255,204,0,0.1); border: 1px solid #ffcc00; padding: 20px; margin: 20px 0;">
+            <p style="margin: 0 0 5px 0;"><strong>Guest Name:</strong> {guest_name}</p>
+            <p style="margin: 0;"><strong>Guest Email:</strong> {guest_email}</p>
+        </div>
+        <p>Please log in to your Hoster Terminal to approve or deny this request.</p>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+        <p style="font-size: 0.7rem; color: #666;">TOKEN.GATE Industrial Access Systems</p>
+    </div>
+    """
+    send_email(manager_email, subject, html)
+
+
+def notify_guest_event_purged(guest_email: str, guest_name: str, event_name: str) -> None:
+    subject = f"TOKEN.GATE | Event Cancelled: {event_name}"
+    html = f"""
+    <div style="font-family: sans-serif; background: #050505; color: #e0e0e0; padding: 40px; border-radius: 8px; border-left: 5px solid #ff0055;">
+        <h2 style="color: #ff0055; text-transform: uppercase;">Event Cancelled</h2>
+        <p>Identity: <strong>{guest_name}</strong></p>
+        <p>Session: <strong>{event_name}</strong></p>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+        <p>The event you registered for has been permanently cancelled and purged from the global terminal by the administration.</p>
+        <p>Any access passes you may have received for this event are now voided.</p>
+        <p style="font-size: 0.7rem; color: #666;">TOKEN.GATE Security Systems</p>
+    </div>
+    """
+    send_email(guest_email, subject, html)
 
 
 def notify_supervisor(subject: str, message: str) -> None:
@@ -376,6 +435,10 @@ def make_qr_png(token: str) -> io.BytesIO:
 def index() -> Response:
     return send_from_directory(BASE_DIR, "index.html")
 
+
+@app.route('/host-registration')
+def host_registration():
+    return send_from_directory(BASE_DIR, "host_registration.html")
 
 @app.route("/hoster")
 def hoster_page() -> Response:
@@ -531,6 +594,8 @@ def delete_event(event_id: str) -> Response:
     customers = read_customers()
     to_delete = [t for t, c in customers.items() if c.get("event_id") == event_id]
     for t in to_delete:
+        guest = customers[t]
+        notify_guest_event_purged(guest["email"], guest["name"], event_name)
         del customers[t]
     write_customers(customers)
     return jsonify({"message": f"Session {event_id} and associated data purged from global terminal."})
@@ -640,6 +705,11 @@ def create_request() -> Response:
 
     notify_request_status(email, name, event_name, "pending")
     notify_supervisor("New Guest Request", f"Guest <strong>{name}</strong> requested access for <strong>{event_name}</strong>.")
+    
+    manager_email = event_info.get("manager_email")
+    if manager_email:
+        notify_hoster_new_guest(manager_email, event_info.get("manager_name", "Manager"), name, email, event_name)
+
     record_history("GUEST_REGISTERED", {"name": name, "email": email, "event_name": event_name})
 
     return jsonify({
@@ -755,6 +825,16 @@ def verify_token() -> Response:
             "status": status,
             "message": f"Access denied: Request is {status}"
         }), 403
+
+    session_event_id = session.get("event_id")
+    is_owner = session.get("owner")
+    
+    if session_event_id and not is_owner:
+        if entry.get("event_id") != session_event_id:
+            return jsonify({
+                "status": "invalid",
+                "message": f"Access denied: Invalid QR. Belongs to {entry.get('party_type', 'another event')}"
+            }), 403
 
     # Check if already entered
     if not entry.get("entered_at"):
