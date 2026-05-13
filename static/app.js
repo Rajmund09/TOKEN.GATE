@@ -51,14 +51,17 @@ const UI = {
 
 const api = async (url, options = {}) => {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  showLoader(options.loaderMsg || "TRANSMITTING DATA...");
   let response;
   try {
     response = await fetch(url, { ...options, headers });
   } catch (err) {
+    hideLoader();
     throw new Error('Network Transmission Failed');
   }
 
   const contentType = response.headers.get("content-type");
+  hideLoader();
   if (contentType && contentType.includes("application/json")) {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
@@ -78,6 +81,18 @@ const showToast = (msg, duration = 4000) => {
   UI.toast.textContent = msg;
   UI.toast.classList.add('show');
   setTimeout(() => UI.toast.classList.remove('show'), duration);
+};
+
+const showLoader = (msg = "SYNCING PROTOCOLS...") => {
+  const loader = document.getElementById('bootLoader');
+  const text = loader?.querySelector('.terminal-text');
+  if (text) text.textContent = msg;
+  loader?.classList.remove('hidden');
+};
+
+const hideLoader = () => {
+  const loader = document.getElementById('bootLoader');
+  loader?.classList.add('hidden');
 };
 
 const formatDate = (iso) => {
@@ -102,6 +117,10 @@ const switchView = (view) => {
     if (!UI.userSection || !UI.hostSection) return; 
     
     state.view = view;
+    // Update theme
+    document.body.classList.remove('theme-guest', 'theme-host');
+    document.body.classList.add(view === 'user' ? 'theme-guest' : 'theme-host');
+
     // Remove active from all
     [UI.viewSwitchUser, UI.viewSwitchHost].forEach(btn => btn?.classList.remove('active'));
     [UI.userSection, UI.hostSection].forEach(sec => sec?.classList.remove('active'));
@@ -165,7 +184,7 @@ const renderDynamicFields = (eventId) => {
     }
 
     return `
-      <div class="form-group reveal-text" style="border-left:2px solid var(--accent); padding-left:1rem;">
+      <div class="form-group reveal-text" style="border-left:2px solid var(--accent-primary); padding-left:1rem;">
         <label>${field.label}</label>
         ${inputHtml}
       </div>
@@ -254,15 +273,15 @@ const addFieldBuilderRow = () => {
   row.className = 'field-builder-row panel reveal-text';
   row.style.padding = '1.2rem';
   row.style.background = 'rgba(0, 242, 255, 0.02)';
-  row.style.borderLeft = '4px solid var(--accent)';
+  row.style.borderLeft = '4px solid var(--accent-primary)';
   row.innerHTML = `
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:0.8rem;">
       <div class="form-group">
-        <label style="font-size:0.6rem; color:var(--accent);">FIELD LABEL</label>
+        <label style="font-size:0.6rem; color:var(--accent-primary);">FIELD LABEL</label>
         <input type="text" class="f-label" placeholder="e.g. Gender" required>
       </div>
       <div class="form-group">
-        <label style="font-size:0.6rem; color:var(--accent);">INPUT TYPE</label>
+        <label style="font-size:0.6rem; color:var(--accent-primary);">INPUT TYPE</label>
         <select class="f-type">
           <option value="text">TEXT LINE</option>
           <option value="dropdown">DROPDOWN LIST</option>
@@ -271,10 +290,10 @@ const addFieldBuilderRow = () => {
       </div>
     </div>
     <div class="form-group">
-      <label style="font-size:0.6rem; color:var(--accent);">OPTIONS (COMMA SEPARATED)</label>
+      <label style="font-size:0.6rem; color:var(--accent-primary);">OPTIONS (COMMA SEPARATED)</label>
       <input type="text" class="f-options" placeholder="Male, Female, Other">
     </div>
-    <button type="button" class="btn-outline" style="margin-top:0.8rem; width:100%; color:var(--secondary); border-color:var(--secondary); font-size:0.6rem;" onclick="this.parentElement.remove()">DESTROY FIELD RECORD</button>
+    <button type="button" class="btn-outline" style="margin-top:0.8rem; width:100%; color:var(--status-rejected); border-color:var(--status-rejected); font-size:0.6rem;" onclick="this.parentElement.remove()">DESTROY FIELD RECORD</button>
   `;
   UI.fieldBuilderList.appendChild(row);
 };

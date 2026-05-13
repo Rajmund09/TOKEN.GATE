@@ -6,29 +6,50 @@
   <title>TOKEN.GATE | Industrial Party Access</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css">
+  <style>
+    /* Global robotic assembly loader */
+    .boot-loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 8, 11, 0.98);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100000;
+      transition: opacity 0.5s ease, visibility 0.5s;
+      backdrop-filter: blur(10px);
+    }
+
+    .boot-loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  </style>
 </head>
-<body class="dark-mode">
-  <!-- TERMINAL BOOT LOADER -->
+<body class="light-mode theme-guest">
   <div id="bootLoader" class="boot-loader">
     <div class="boot-content">
-      <div class="loader"></div>
-      <p class="terminal-text">SYNCING SYSTEM PROTOCOLS...</p>
+      <p class="terminal-text">INITIALIZING GUEST INTERFACE<span class="typewriter-cursor"></span></p>
     </div>
   </div>
 
-  <div class="grid-overlay"></div>
+
   
   <nav class="nav-bar">
     <div class="logo">
-      <span class="glitch" data-text="TOKEN.GATE">TOKEN.GATE</span>
+      <span class="logo-text">TOKEN.GATE</span>
+      <span class="tech-label" style="margin-left: 10px;">[SYSTEM_READY]</span>
     </div>
     <div class="nav-actions">
+      <button id="themeToggle" class="nav-btn" title="Toggle Theme"></button>
       <button id="viewSwitchUser" class="nav-btn active">Public</button>
-      <button id="viewSwitchHost" class="nav-btn">Host Event</button>
+      <a href="/host-registration" class="nav-btn">Host Event</a>
       <a href="/hoster" class="nav-btn" style="text-decoration: none;">Terminal</a>
-      <a href="/superior" class="nav-btn" style="text-decoration: none; color: var(--secondary); border-color: var(--secondary); margin-left: 10px;">ROOT</a>
+      <a href="/superior" class="nav-btn root-text" style="margin-left: 10px;">ROOT</a>
     </div>
   </nav>
 
@@ -87,53 +108,7 @@
       </div>
     </section>
 
-    <!-- HOST REGISTRATION SECTION -->
-    <section id="hostSection" class="view-section">
-      <div class="view-header">
-        <span class="kicker">Session Management</span>
-        <h1>Establish.</h1>
-        <p>Register as a Session Manager to authorize and monitor identity transmissions.</p>
-      </div>
 
-      <div class="panel max-width-panel fade-up" style="max-width: 600px; margin: 0 auto;">
-        <div class="panel-header">
-          <span class="kicker">Protocol Setup</span>
-          <h2>Initialize Event</h2>
-        </div>
-        <form id="hostForm" class="industrial-form">
-          <div class="form-group">
-            <label for="hostName">Manager Identity</label>
-            <input type="text" id="hostName" name="manager_name" placeholder="Full Legal Identity" required>
-          </div>
-          <div class="form-group">
-            <label for="hostEmail">Notification Channel (Email)</label>
-            <input type="email" id="hostEmail" name="email" placeholder="manager@access.gate" required>
-          </div>
-          <div class="form-group">
-            <label for="hostEventName">Session Name</label>
-            <input type="text" id="hostEventName" name="event_name" placeholder="E.g. Neon Horizon, Private Gala" required>
-          </div>
-          <div class="form-group">
-            <label for="hostPass">Security Key</label>
-            <input type="password" id="hostPass" name="password" placeholder="Terminal Access Password" required>
-          </div>
-          
-          <div class="form-group" style="margin-top:1rem; border-top:1px solid var(--border); padding-top:1rem;">
-            <label>Registration Form Customization</label>
-            <p class="dim-text" style="font-size:0.7rem; margin-bottom:1rem;">Add extra fields like Gender, Meal Preference, or Student/Teacher status.</p>
-            <div id="fieldBuilderList" style="display:flex; flex-direction:column; gap:0.8rem;">
-              <!-- Field rows will go here -->
-            </div>
-            <button type="button" id="addFieldBtn" class="btn-outline" style="margin-top:1rem; width:100%; border-style:dashed;">+ ADD CUSTOM FIELD</button>
-          </div>
-
-          <button type="submit" class="btn-primary" style="margin-top:1rem;">
-            <span>START SESSION</span>
-            <div class="loader hidden"></div>
-          </button>
-        </form>
-      </div>
-    </section>
 
     <!-- SUCCESS MODAL -->
     <dialog id="successModal" class="modal industrial-modal">
@@ -162,25 +137,24 @@
         </div>
     </dialog>
 
-  <!-- QR MODAL -->
   <dialog id="qrDialog" class="modal industrial-modal">
-    <div class="modal-content">
+    <div class="modal-content" style="border-color: var(--accent-active);">
       <button class="close-modal">&times;</button>
       <div class="modal-header">
-        <span class="kicker">Pass Verification</span>
-        <h2 id="modalName">IDENTITY</h2>
+        <span class="kicker">Security Credential</span>
+        <h2 id="modalName">IDENTITY_LOCKED</h2>
       </div>
-      <div class="qr-display">
-        <div class="qr-frame">
-          <img id="modalQr" src="" alt="QR Code">
+      <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; gap: 2rem; margin: 2rem 0;">
+        <div class="qr-frame" style="background: white; padding: 1.5rem; border: 4px double var(--accent-active);">
+          <img id="modalQr" src="" alt="QR Code" style="display: block; width: 220px; height: 220px;">
         </div>
-        <div class="token-info">
-          <code id="modalToken">TOKEN-ID</code>
-          <p id="modalExpiry" class="dim-text">Valid Until: --/--</p>
+        <div class="id-container" style="width: 100%; text-align: center;">
+          <code id="modalToken" style="font-size: 1.2rem; color: var(--accent-active);">TOKEN-ID</code>
+          <p id="modalExpiry" class="dim-text" style="font-size: 0.7rem; margin-top: 0.5rem;">Valid Until: --/--</p>
         </div>
       </div>
-      <div class="modal-actions">
-        <button id="copyTokenBtn" class="btn-secondary">Copy ID</button>
+      <div class="modal-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <button id="copyTokenBtn" class="btn-outline">Copy ID</button>
         <a id="downloadQrBtn" href="" download="token_gate_pass.png" class="btn-primary">Download PNG</a>
       </div>
     </div>
@@ -205,8 +179,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <div class="noise-overlay"></div>
-
+  <script src="/static/theme.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>
