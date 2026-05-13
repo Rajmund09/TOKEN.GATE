@@ -46,5 +46,8 @@ The system is pre-configured with:
 - **X-Content-Type-Options: nosniff** (Prevents MIME sniffing)
 - **X-XSS-Protection: 1; mode=block** (Blocks Cross-Site Scripting)
 
+## 6. Theme Persistence
+The terminal uses `localStorage` to persist the user's "Paper 3D" theme preference (Day/Night) across all terminal nodes. Ensure your browser allows storage for the domain.
+
 ---
 **Your system is now hardened and ready for the world.**
