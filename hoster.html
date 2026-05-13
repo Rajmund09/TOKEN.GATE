@@ -22,14 +22,14 @@
   <nav class="nav-bar">
     <div class="logo">
       <span class="logo-text">TERMINAL.GATE</span> 
-      <span class="tech-label" style="margin-left: 10px;">[SESSION_ACTIVE]</span>
-      <span style="font-size: 0.6em; color: var(--text-dim); margin-left: 1rem;">// HOSTER</span>
+      <span class="tech-label">[SESSION_ACTIVE]</span>
+      <span class="tech-label" style="border:none; box-shadow:none; opacity:0.6;">// HOSTER</span>
     </div>
     <div class="nav-actions">
       <button id="themeToggle" class="nav-btn" title="Toggle Theme"></button>
       <a href="/" class="nav-btn">Public Portal</a>
       <a href="/host-registration" class="nav-btn">Host Event</a>
-      <a href="/superior" class="nav-btn root-text" style="margin-left: 10px;">ROOT</a>
+      <a href="/superior" class="nav-btn root-text">ROOT</a>
     </div>
   </nav>
 
@@ -126,7 +126,7 @@
         <h2>Confirm Purge</h2>
       </div>
       <p id="confirmMessage" class="terminal-text" style="margin-bottom: 2rem; color: var(--text-dim);"></p>
-      <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+      <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: flex-end;">
         <button id="cancelConfirmBtn" class="btn-outline">CANCEL</button>
         <button id="acceptConfirmBtn" class="btn-primary" style="background: rgba(218, 54, 51, 0.1); border-color: var(--status-rejected); color: var(--status-rejected);">PURGE IDENTITY</button>
       </div>
