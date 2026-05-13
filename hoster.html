@@ -4,24 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TOKEN.GATE | Hoster Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css">
   <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body class="admin-page">
-  <!-- TERMINAL BOOT LOADER -->
+<body class="light-mode admin-page theme-host">
   <div id="bootLoader" class="boot-loader">
     <div class="boot-content">
-      <div class="loader"></div>
-      <p class="terminal-text">ESTABLISHING HOSTER UPLINK...</p>
+      <p class="terminal-text">INITIALIZING HOSTER INTERFACE<span class="typewriter-cursor"></span></p>
     </div>
   </div>
 
-  <div class="grid-overlay"></div>
+
   
   <nav class="nav-bar">
-    <div class="logo">TERMINAL.GATE <span style="font-size: 0.6em; color: var(--text-dim);">// HOSTER</span></div>
+    <div class="logo">
+      <span class="logo-text">TERMINAL.GATE</span> 
+      <span class="tech-label" style="margin-left: 10px;">[SESSION_ACTIVE]</span>
+      <span style="font-size: 0.6em; color: var(--text-dim); margin-left: 1rem;">// HOSTER</span>
+    </div>
     <div class="nav-actions">
+      <button id="themeToggle" class="nav-btn" title="Toggle Theme"></button>
       <a href="/" class="nav-btn">Public Portal</a>
+      <a href="/host-registration" class="nav-btn">Host Event</a>
+      <a href="/superior" class="nav-btn root-text" style="margin-left: 10px;">ROOT</a>
     </div>
   </nav>
 
@@ -111,8 +119,22 @@
       </div>
     </section>
   </main>
+  <dialog id="confirmModal" class="modal">
+    <div class="modal-content" style="padding: 2rem;">
+      <div class="panel-header" style="margin-bottom: 1.5rem;">
+        <span class="kicker" style="color: var(--secondary)">AUTHORIZATION REQUIRED</span>
+        <h2>Confirm Purge</h2>
+      </div>
+      <p id="confirmMessage" class="terminal-text" style="margin-bottom: 2rem; color: var(--text-dim);"></p>
+      <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+        <button id="cancelConfirmBtn" class="btn-outline">CANCEL</button>
+        <button id="acceptConfirmBtn" class="btn-primary" style="background: rgba(218, 54, 51, 0.1); border-color: var(--status-rejected); color: var(--status-rejected);">PURGE IDENTITY</button>
+      </div>
+    </div>
+  </dialog>
 
   <div id="toast" class="toast"></div>
+  <script src="/static/theme.js"></script>
   <script src="/static/hoster.js"></script>
 </body>
 </html>

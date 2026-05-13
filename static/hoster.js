@@ -26,11 +26,25 @@ const state = {
 
 // --- UTILS ---
 
+const showLoader = (msg = "SYNCING PROTOCOLS...") => {
+  const loader = document.getElementById('bootLoader');
+  const text = loader?.querySelector('.terminal-text');
+  if (text) text.textContent = msg;
+  loader?.classList.remove('hidden');
+};
+
+const hideLoader = () => {
+  const loader = document.getElementById('bootLoader');
+  loader?.classList.add('hidden');
+};
+
 const api = async (url, options = {}) => {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  showLoader(options.loaderMsg || "TRANSMITTING DATA...");
   try {
     const response = await fetch(url, { ...options, headers });
     const contentType = response.headers.get("content-type");
+    hideLoader();
     if (contentType && contentType.includes("application/json")) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
@@ -40,6 +54,7 @@ const api = async (url, options = {}) => {
       return {};
     }
   } catch (err) {
+    hideLoader();
     if (err.message.includes('Network')) throw new Error('Network Transmission Failed');
     throw err;
   }
@@ -121,17 +136,17 @@ const renderRequests = () => {
       <div class="request-info">
         <h4>${req.name} 
           <span class="status-badge status-${req.status}">${req.status}</span>
-          ${req.entered_at ? `<span class="status-badge" style="background:var(--accent-dim); color:var(--accent); border-color:var(--accent);">ENTERED</span>` : ''}
+          ${req.entered_at ? `<span class="status-badge status-approved">ENTERED</span>` : ''}
         </h4>
         <p>${req.email}</p>
         <p class="dim-text">ID: ${req.token} | Sync: ${formatDate(req.created_at)}</p>
       </div>
       <div class="request-actions">
         ${req.status === 'pending' ? `
-          <button class="btn-primary glitch-hover" style="padding: 0.5rem 1rem; font-size:0.7rem;" onclick="updateStatus('${req.token}', 'approved')">ALLOW</button>
-          <button class="btn-outline" style="padding: 0.5rem 1rem; font-size:0.7rem;" onclick="updateStatus('${req.token}', 'rejected')">DENY</button>
+          <button class="btn-primary btn-approve" style="padding: 0.5rem 1rem; font-size:0.7rem;" onclick="updateStatus('${req.token}', 'approved')">ALLOW</button>
+          <button class="btn-outline btn-deny" style="padding: 0.5rem 1rem; font-size:0.7rem;" onclick="updateStatus('${req.token}', 'rejected')">DENY</button>
         ` : `
-          <button class="btn-outline" style="padding: 0.5rem 1rem; font-size:0.7rem;" onclick="deleteEntry('${req.token}')">PURGE</button>
+          <button class="btn-purge" style="padding: 0.5rem 1rem; font-size:0.7rem;" onclick="deleteEntry('${req.token}')">PURGE</button>
         `}
       </div>
     </div>
@@ -151,15 +166,38 @@ window.updateStatus = async (token, status) => {
   }
 };
 
-window.deleteEntry = async (token) => {
-  if (!confirm(`Purge identity ${token} from terminal?`)) return;
-  try {
-    await api(`/api/customers/${token}`, { method: 'DELETE' });
-    showToast('Identity purged');
-    fetchRequests();
-  } catch (err) {
-    showToast(err.message);
-  }
+window.deleteEntry = (token) => {
+  const modal = document.getElementById('confirmModal');
+  const msg = document.getElementById('confirmMessage');
+  const acceptBtn = document.getElementById('acceptConfirmBtn');
+  const cancelBtn = document.getElementById('cancelConfirmBtn');
+
+  msg.textContent = `Purge identity ${token} from terminal?`;
+  modal.showModal();
+
+  const handleAccept = async () => {
+    cleanup();
+    try {
+      await api(`/api/customers/${token}`, { method: 'DELETE' });
+      showToast('Identity purged');
+      fetchRequests();
+    } catch (err) {
+      showToast(err.message);
+    }
+  };
+
+  const handleCancel = () => {
+    cleanup();
+  };
+
+  const cleanup = () => {
+    modal.close();
+    acceptBtn.removeEventListener('click', handleAccept);
+    cancelBtn.removeEventListener('click', handleCancel);
+  };
+
+  acceptBtn.addEventListener('click', handleAccept);
+  cancelBtn.addEventListener('click', handleCancel);
 };
 
 // --- SCANNER & VERIFICATION ---
@@ -189,7 +227,7 @@ const initScanner = () => {
       fetchRequests();
       
       UI.scannerStatus.textContent = "ACCESS GRANTED";
-      UI.scannerStatus.style.color = "var(--success)";
+      UI.scannerStatus.style.color = "var(--status-approved)";
       setTimeout(() => {
           UI.scannerStatus.textContent = "AWAITING SIGNAL";
           UI.scannerStatus.style.color = "";
@@ -198,7 +236,7 @@ const initScanner = () => {
       logVerify(err.message, 'error');
       showToast(err.message);
       UI.scannerStatus.textContent = "ACCESS DENIED";
-      UI.scannerStatus.style.color = "var(--secondary)";
+      UI.scannerStatus.style.color = "var(--status-rejected)";
       setTimeout(() => {
           UI.scannerStatus.textContent = "AWAITING SIGNAL";
           UI.scannerStatus.style.color = "";
@@ -227,13 +265,20 @@ const logVerify = (msg, type, isFirst = true) => {
   const entry = document.createElement('div');
   entry.className = 'log-entry';
   
-  let color = 'var(--success)';
-  if (type === 'error') color = 'var(--secondary)';
-  else if (!isFirst) color = 'var(--warning)';
+  let prefix = '<span class="log-prefix" style="color:var(--status-approved);">[OK]</span>';
+  if (type === 'error') {
+    prefix = '<span class="log-prefix" style="color:var(--status-rejected);">[FAIL]</span>';
+  } else if (!isFirst) {
+    prefix = '<span class="log-prefix" style="color:var(--status-pending);">[RE-ENTRY]</span>';
+  }
   
-  entry.style.color = color;
-  entry.style.marginBottom = '8px';
-  entry.innerHTML = `> <span style="opacity:0.5">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+  entry.innerHTML = `
+    ${prefix} 
+    <div style="flex:1;">
+      <span class="log-time">[${new Date().toLocaleTimeString()}]</span>
+      ${msg}
+    </div>
+  `;
   
   UI.verifyLog.appendChild(entry);
   UI.verifyLog.scrollTop = UI.verifyLog.scrollHeight;
@@ -247,6 +292,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   UI.adminSearch.oninput = renderRequests;
   UI.verifyTokenBtn.onclick = verifyManual;
 
+  // SYSTEM BOOT COMPLETE
+  setTimeout(() => {
+    document.getElementById('bootLoader')?.classList.add('hidden');
+  }, 1000);
+
   // Check existing session
   try {
     const data = await api('/api/session');
@@ -258,8 +308,4 @@ document.addEventListener('DOMContentLoaded', async () => {
       initScanner();
     }
   } catch (err) {}
-
-  setTimeout(() => {
-    document.getElementById('bootLoader')?.classList.add('hidden');
-  }, 800);
 });
