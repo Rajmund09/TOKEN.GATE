@@ -67,8 +67,8 @@
   --status-pending: #ffcc00;
   --status-rejected: #ff5555;
   
-  --panel-3d: 10px 10px 0px rgba(255, 255, 255, 0.95);
-  --button-3d: 5px 5px 0px rgba(255, 255, 255, 0.95);
+  --panel-3d: 12px 12px 0px rgba(255, 255, 255, 0.95);
+  --button-3d: 6px 6px 0px rgba(255, 255, 255, 0.95);
 }
 
 .dark-mode:not(.theme-root) {
