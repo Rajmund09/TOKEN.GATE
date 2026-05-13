@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOKEN.GATE // HOST_REGISTRATION</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="light-mode theme-host">
+  <div id="bootLoader" class="boot-loader">
+    <div class="boot-content">
+      <p class="terminal-text">INITIALIZING HOST CONSOLE<span class="typewriter-cursor"></span></p>
+    </div>
+  </div>
+
+  <nav class="nav-bar">
+    <div class="logo">
+      <span class="logo-text">TOKEN.GATE</span>
+      <span class="tech-label" style="margin-left: 10px;">[HOST_INITIALIZATION]</span>
+    </div>
+    <div class="nav-actions">
+      <button id="themeToggle" class="nav-btn" title="Toggle Theme"></button>
+      <a href="/" class="nav-btn">Public Portal</a>
+      <a href="/hoster" class="nav-btn">Terminal</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="view-header" style="border-left-color: var(--accent-host);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <span class="kicker" style="color: var(--accent-host);">Management Protocol</span>
+          <h1>Initialize New Session</h1>
+          <p>Configure and deploy a custom gated access instance.</p>
+        </div>
+        <div class="tech-label" style="border-color: var(--accent-host); color: var(--accent-host);">[SEC_OP_77]</div>
+      </div>
+    </header>
+
+    <div class="panel max-width-panel fade-up" style="max-width: 800px; margin: 0 auto; border-color: var(--accent-host-dim);">
+      <div class="panel-header">
+        <span class="kicker">Session Parameters</span>
+        <h2>Deployment Config</h2>
+      </div>
+      
+      <form id="hostForm" class="industrial-form">
+        <div class="card-grid">
+          <div class="form-group">
+            <label for="hostName">Manager Identity</label>
+            <input type="text" id="hostName" name="manager_name" placeholder="Full Legal Name" required>
+          </div>
+          <div class="form-group">
+            <label for="hostEmail">Notification Link (Email)</label>
+            <input type="email" id="hostEmail" name="email" placeholder="manager@token.gate" required>
+          </div>
+        </div>
+
+        <div class="card-grid" style="margin-top: 1rem;">
+          <div class="form-group">
+            <label for="hostEventName">Session Title</label>
+            <input type="text" id="hostEventName" name="event_name" placeholder="E.g. VIP Alpha" required>
+          </div>
+          <div class="form-group">
+            <label for="hostPass">Security Access Key</label>
+            <input type="password" id="hostPass" name="password" placeholder="Set Terminal Password" required>
+          </div>
+        </div>
+        
+        <div class="form-group" style="margin-top:2rem; border-top:1px dashed var(--border); padding-top:1.5rem;">
+          <label>Identity Schema Customization</label>
+          <p class="dim-text" style="font-size:0.75rem; margin-bottom:1rem;">Define extra data requirements for this session.</p>
+          <div id="fieldBuilderList" style="display:flex; flex-direction:column; gap:1rem;">
+            <!-- Field rows -->
+          </div>
+          <button type="button" id="addFieldBtn" class="btn-outline" style="margin-top:1rem; width:100%; border-style:dashed; border-color: var(--accent-host);">
+            + ADD DATA REQUIREMENT
+          </button>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top:2rem; background: var(--accent-host); border-color: var(--accent-host); width: 100%;">
+          <span>INITIALIZE GATEWAY</span>
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- SUCCESS MODAL -->
+  <dialog id="successModal" class="modal industrial-modal">
+    <div class="modal-content success-content" style="border-color: var(--accent-host);">
+      <div class="modal-header">
+        <span class="kicker" style="color: var(--accent-host);">Initialization Complete</span>
+        <h2>Gateway Live</h2>
+      </div>
+      <div class="modal-body" style="text-align: center; margin: 2rem 0;">
+        <p class="terminal-text" style="margin-bottom: 1rem;">Session Security ID Generated:</p>
+        <div class="id-container">
+          <code id="displayEventId" style="color: var(--accent-host);">---</code>
+          <button id="copyEventId" class="btn-icon" title="Copy to Clipboard">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          </button>
+        </div>
+        <p class="dim-text" style="margin-top: 1.5rem; font-size: 0.8rem;">Save this ID. It is required to link Terminal hardware.</p>
+      </div>
+      <div class="modal-actions">
+        <button id="closeSuccessBtn" class="btn-primary" style="background: var(--accent-host); border-color: var(--accent-host); width: 100%;">
+          OPEN TERMINAL UPLINK
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="/static/theme.js"></script>
+  <script src="/static/app.js"></script>
+  <script>
+    // Specific initialization for this page
+    document.addEventListener('DOMContentLoaded', () => {
+      // If we are on this page, force 'host' mode logic
+      if (typeof switchView === 'function') {
+        // We don't actually need to switchView here because the HTML is already host-specific
+        // But we need to make sure the form works.
+      }
+    });
+  </script>
+</body>
+</html>
