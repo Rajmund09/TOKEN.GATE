@@ -1,66 +1,95 @@
 # 🛡️ TOKEN.GATE
 ### Neo-Brutalist Paper 3D Access Management System
 
-**TOKEN.GATE** is a high-security, multi-tenant industrial access management platform featuring a unique **Paper 3D (Neo-Brutalist)** aesthetic. Built for professional event hosting and identity verification, it combines high-contrast monochromatic design with tactile interactive physics and robust protocol isolation.
+**TOKEN.GATE** is a high-security, multi-tenant industrial access management platform. It features a signature **Paper 3D (Neo-Brutalist)** aesthetic, combining high-contrast monochromatic design with tactile interactive physics and robust protocol isolation.
 
-![Project Overview](https://img.shields.io/badge/Security-Industrial--Grade-000000?style=for-the-badge)
+![Project Status](https://img.shields.io/badge/Status-Operational-000000?style=for-the-badge)
+![Security](https://img.shields.io/badge/Security-Industrial--Grade-000000?style=for-the-badge)
 ![UI/UX](https://img.shields.io/badge/Aesthetics-Paper--3D-f4f4f0?style=for-the-badge)
 ![Architecture](https://img.shields.io/badge/Architecture-Multi--Tenant-000000?style=for-the-badge)
 
 ---
 
-## 🚀 Key Features
+## 🖥️ Visual Protocol Gallery
 
-### 1. Neo-Brutalist Paper 3D UI
-A high-contrast "Ink on Paper" design system featuring solid 3D shadows, tactile interactive physics, and high-precision monochromatic typography. Supports both **Day Mode** (Paper White) and **Night Mode** (Tactical Black).
+The system is divided into three distinct security tiers, each with a specialized terminal interface.
 
-### 2. Multi-Tenant Protocol Isolation
-A strict architectural separation between **Hoster Terminals** and the **Superior Mainframe**. Each event session is isolated within its own security node, protected by unique access keys.
+### 1. Public Portal & Guest Registration
+The primary interface for identity submission. Guests can select active sessions and transmit their credentials to the vault.
+![Public Portal](screenshots/Screenshot%202026-05-14%20105834.png)
 
-### 3. Tactical Root Control Node
-The **Superior Override** dashboard provides a global overview of system health, active session counts, and total signal audit logs, featuring a dedicated high-security inverted theme.
+### 2. Session Initialization (Host Node)
+The deployment center for event managers. Configure unique security keys and identity requirements for new access nodes.
+![Session Initialization](screenshots/Screenshot%202026-05-14%20105920.png)
 
-### 4. Real-Time QR Pass System
-Verified guests receive clean, paper-styled QR-code passes. The built-in **Gate Controller** terminal allows managers to scan or manually verify access signals with instant visual feedback.
+### 3. Hoster Secure Sync
+The authorization gateway for terminal operators. Connect to specific event sessions using encrypted access keys.
+![Hoster Sync](screenshots/Screenshot%202026-05-14%20110019.png)
 
-### 5. Permanent Audit Vault
-An immutable ledger of every system interaction. From event creation to gate entry, every action is logged with high-precision timestamps for total administrative oversight.
+### 4. Gate Controller Terminal
+The operational heart of the system. Real-time signal verification, guest transmission monitoring, and a live audit console.
+![Gate Controller](screenshots/Screenshot%202026-05-14%20110053.png)
+
+### 5. Superior Override Node
+The global administrative mainframe. Inverted theme for high-security awareness, featuring system-wide purge capabilities and signal audit summaries.
+![Superior Override](screenshots/Screenshot%202026-05-14%20110108.png)
+
+---
+
+## 🚀 Core Architecture
+
+### 🛡️ Multi-Tenant Protocol Isolation
+A strict architectural separation ensures that data from different event sessions never intersects. Each **Hoster Terminal** operates within an isolated security node, authenticated by a unique session key.
+
+### 🖋️ Neo-Brutalist Design System
+A custom "Ink on Paper" visual identity featuring:
+- **Paper 3D Depth**: Realistic drop shadows and layered components.
+- **Tactile Physics**: Interactive elements that react to user input with physical weighting.
+- **Day/Night Protocols**: High-precision monochromatic themes tailored for different operational environments.
+
+### ⚡ Real-Time Gate Logic
+Built-in **Gate Controller** logic allows for instantaneous verification of guest tokens via QR scanning or manual signal entry, with all actions recorded to an immutable ledger.
 
 ---
 
 ## 🛠️ Technology Stack
-- **Backend**: Python / Flask
-- **Frontend**: Vanilla JS (ES6+), Neo-Brutalist CSS3
-- **QR Engine**: html5-qrcode / qrcode-python
-- **Data Persistence**: Atomic JSON Vaults
-- **Theme Management**: Centralized Day/Night Protocol
+
+| Layer | Technology |
+| :--- | :--- |
+| **Backend** | Python 3.12 / Flask |
+| **Frontend** | Vanilla JavaScript (ES6+), CSS3 (Custom Neo-Brutalist Framework) |
+| **Security** | Protocol-based Isolation, JWT/Key Authentication |
+| **Identity** | QR-Python, html5-qrcode (Client-side scan) |
+| **Persistence** | Atomic JSON Signal Vaults |
 
 ---
 
-## 📦 Installation & Setup
+## 📦 Deployment Protocol
 
-1. **Clone the Repository**
+1. **Clone Infrastructure**
    ```bash
-   git clone https://github.com/your-username/TOKEN.GATE.git
+   git clone https://github.com/Rajmund09/TOKEN.GATE.git
    cd TOKEN.GATE
    ```
 
-2. **Install Dependencies**
+2. **Initialize Dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
 3. **Configure Environment**
-   Create a `.env` file based on the `DEPLOY.md` template.
+   Define your security constants in a `.env` file (see `DEPLOY.md`).
 
-4. **Initialize Terminal**
+4. **Boot System Mainframe**
    ```bash
    python app.py
    ```
 
 ---
 
-## ⚖️ License
-This project is proprietary and built for high-security access demonstration. All rights reserved by **Prabhushankar Mund**.
+## ⚖️ License & Proprietary Notice
+
+This project is proprietary and engineered for high-security access demonstration. 
+**All rights reserved © 2026 Prabhushankar Mund.**
 
 > *"Precision Access. Immutable Security. Tactical Paper Aesthetic."*
