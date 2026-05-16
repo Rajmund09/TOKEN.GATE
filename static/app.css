@@ -8,7 +8,7 @@
   --secondary: #000000; 
   --accent-active: #000000;
   
-  --bg-base: #f4f4f0; /* Paper white */
+  --bg-base: #fafaf8; /* Professional Off-White */
   --bg-surface: #ffffff;
   --bg-surface-elevated: #eeeeee;
   --text-main: #222222;
@@ -118,16 +118,22 @@ body {
   line-height: 1.5;
 }
 
-/* Polka dot background pattern */
+/* Hyperspace Overlay */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background-image: radial-gradient(var(--text-dim) 1px, transparent 1px);
-  background-size: 20px 20px;
-  opacity: 0.15;
+  background: transparent;
   z-index: -1;
   pointer-events: none;
+}
+
+#jelly-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: transparent;
 }
 
 /* Dark Mode Inversion */
