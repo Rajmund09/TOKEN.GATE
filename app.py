@@ -37,7 +37,7 @@ except (ValueError, TypeError):
     SMTP_PORT = 587
 SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
-EMAIL_FROM = os.environ.get("EMAIL_FROM", "TOKEN.GATE <noreply@tokengate.com>")
+EMAIL_FROM = os.environ.get("EMAIL_FROM", '"TOKEN.GATE" <noreply@tokengate.com>')
 SUPERVISOR_EMAIL = os.environ.get("SUPERVISOR_EMAIL", "prabhushankarmund@gmail.com")
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
@@ -131,21 +131,39 @@ def write_json(file: Path, data: dict[str, Any]) -> None:
 def read_history() -> list:
     path = os.path.join(DATA_DIR, "history.json")
     if not os.path.exists(path): return []
-    with open(path, "r") as f:
-        try: return json.load(f)
-        except: return []
+    with data_lock:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return []
 
 def record_history(action: str, details: dict) -> None:
-    history = read_history()
-    history.append({
-        "timestamp": utc_now().isoformat(),
-        "action": action,
-        "details": details
-    })
-    # Keep last 1000 records
-    history = history[-1000:]
-    with open(os.path.join(DATA_DIR, "history.json"), "w") as f:
-        json.dump(history, f, indent=2)
+    path = os.path.join(DATA_DIR, "history.json")
+    with data_lock:
+        # Thread-safe read
+        history = []
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    history = json.load(f)
+            except:
+                history = []
+        
+        # Modify
+        history.append({
+            "timestamp": utc_now().isoformat(),
+            "action": action,
+            "details": details
+        })
+        history = history[-1000:]
+        
+        # Thread-safe write
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(history, f, indent=2)
+        except Exception as e:
+            app.logger.error(f"Failed to write history: {e}")
 
 
 def read_customers() -> dict[str, dict[str, Any]]:
@@ -221,6 +239,11 @@ def _send_email_sync(to_email: str, subject: str, body_html: str, attachment: io
     """Real email logic executed in background. Includes timeouts and robust error handling."""
     if not SMTP_USER or not SMTP_PASS:
         app.logger.info(f"\n[MOCK EMAIL] TO: {to_email}\nSUBJECT: {subject}\n")
+        record_history("EMAIL_MOCK", {
+            "to": to_email,
+            "subject": subject,
+            "reason": "SMTP credentials missing or empty in environment"
+        })
         return
 
     try:
@@ -244,8 +267,19 @@ def _send_email_sync(to_email: str, subject: str, body_html: str, attachment: io
             server.starttls()
             server.login(SMTP_USER, SMTP_PASS)
             server.send_message(msg)
+            
+        record_history("EMAIL_SENT", {
+            "to": to_email,
+            "subject": subject
+        })
     except Exception as e:
-        app.logger.error(f"CRITICAL ERROR: Failed to send email to {to_email}: {e}")
+        error_msg = str(e)
+        app.logger.error(f"CRITICAL ERROR: Failed to send email to {to_email}: {error_msg}")
+        record_history("EMAIL_FAILED", {
+            "to": to_email,
+            "subject": subject,
+            "error": error_msg
+        })
 
 
 def notify_event_creation(manager_email: str, manager_name: str, event_name: str, event_id: str) -> None:
