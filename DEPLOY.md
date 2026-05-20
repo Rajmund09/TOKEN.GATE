@@ -40,13 +40,27 @@ EMAIL_FROM="TOKEN.GATE <noreply@tokengate.com>"
    gunicorn -w 4 -b 0.0.0.0:5000 app:app
    ```
 
-## 5. Security Headers
+## 5. Data Persistence (CRITICAL for Render/Railway/Heroku)
+The database is stored in a local SQLite file (`data/token_gate.db`). If you deploy to hosting providers with ephemeral filesystems (like Render or Railway), the database file will be deleted whenever the container restarts, sleeps, or redeploys.
+
+To prevent your events and guests from disappearing, you **MUST** attach a persistent disk/volume to the `/data` directory:
+* **Render**: 
+  1. Go to your Web Service dashboard, click **Disks**, and click **Add Disk**.
+  2. Name it `token-gate-disk`.
+  3. Set the **Mount Path** to `/opt/render/project/src/data` (which maps to your `data` folder).
+  4. Set size to `1 GB` (free/cheap).
+* **Railway**:
+  1. Click **Add Service** -> **Volume**.
+  2. Set the **Mount Path** to `/app/data` (or the folder where your code runs).
+* **Self-hosted VPS**: Ensure the `data/` directory has write permissions (`chmod -R 755 data`).
+
+## 6. Security Headers
 The system is pre-configured with:
 - **X-Frame-Options: DENY** (Prevents Clickjacking)
 - **X-Content-Type-Options: nosniff** (Prevents MIME sniffing)
 - **X-XSS-Protection: 1; mode=block** (Blocks Cross-Site Scripting)
 
-## 6. Theme Persistence
+## 7. Theme Persistence
 The terminal uses `localStorage` to persist the user's "Paper 3D" theme preference (Day/Night) across all terminal nodes. Ensure your browser allows storage for the domain.
 
 ---

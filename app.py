@@ -2,6 +2,7 @@ import io
 import json
 import os
 import secrets
+import sqlite3
 import threading
 import smtplib
 from datetime import datetime, timedelta, timezone
@@ -24,6 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 CUSTOMERS_FILE = DATA_DIR / "customers.json"
 EVENTS_FILE = DATA_DIR / "events.json"
+DB_FILE = DATA_DIR / "token_gate.db"
 
 # CONFIGURATION FROM ENV
 OWNER_USER = os.environ.get("ADMIN_USER", "owner")
@@ -91,95 +93,346 @@ def validate_csrf():
         pass
 
 
-data_lock = threading.Lock()
+def get_db_connection():
+    conn = sqlite3.connect(DB_FILE, timeout=30.0)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db() -> None:
+    """Initialize SQLite database and migrate JSON data if necessary."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    conn = get_db_connection()
+    try:
+        with conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS events (
+                    event_id TEXT PRIMARY KEY,
+                    manager_name TEXT,
+                    event_name TEXT,
+                    password TEXT,
+                    manager_email TEXT,
+                    custom_fields TEXT,
+                    created_at TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS customers (
+                    token TEXT PRIMARY KEY,
+                    event_id TEXT,
+                    name TEXT,
+                    email TEXT,
+                    party_type TEXT,
+                    status TEXT,
+                    custom_responses TEXT,
+                    created_at TEXT,
+                    expires_at TEXT,
+                    entered_at TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT,
+                    action TEXT,
+                    details TEXT
+                )
+            """)
+    except Exception as e:
+        app.logger.error(f"Failed to initialize database: {e}")
+    finally:
+        conn.close()
+
+    # Automatic migration from JSON files to SQLite
+    migrate_json_to_sqlite()
+
+
+def migrate_json_to_sqlite() -> None:
+    """Migrates existing data from events.json, customers.json, and history.json into SQLite."""
+    events_migrated = False
+    customers_migrated = False
+    history_migrated = False
+
+    # Migrate events
+    if EVENTS_FILE.exists():
+        try:
+            content = EVENTS_FILE.read_text(encoding="utf-8").strip()
+            if content and content != "{}":
+                data = json.loads(content)
+                if data and isinstance(data, dict):
+                    conn = get_db_connection()
+                    try:
+                        with conn:
+                            for event_id, info in data.items():
+                                conn.execute("""
+                                    INSERT OR IGNORE INTO events 
+                                    (event_id, manager_name, event_name, password, manager_email, custom_fields, created_at)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                """, (
+                                    event_id,
+                                    info.get("manager_name"),
+                                    info.get("event_name"),
+                                    info.get("password"),
+                                    info.get("manager_email"),
+                                    json.dumps(info.get("custom_fields", [])),
+                                    info.get("created_at")
+                                ))
+                        events_migrated = True
+                    except Exception as e:
+                        app.logger.error(f"Migration error for events: {e}")
+                    finally:
+                        conn.close()
+            else:
+                events_migrated = True
+        except Exception as e:
+            app.logger.error(f"Failed to read/migrate events.json: {e}")
+
+    # Migrate customers
+    if CUSTOMERS_FILE.exists():
+        try:
+            content = CUSTOMERS_FILE.read_text(encoding="utf-8").strip()
+            if content and content != "{}":
+                data = json.loads(content)
+                if data and isinstance(data, dict):
+                    conn = get_db_connection()
+                    try:
+                        with conn:
+                            for token, info in data.items():
+                                conn.execute("""
+                                    INSERT OR IGNORE INTO customers 
+                                    (token, event_id, name, email, party_type, status, custom_responses, created_at, expires_at, entered_at)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                """, (
+                                    token,
+                                    info.get("event_id"),
+                                    info.get("name"),
+                                    info.get("email"),
+                                    info.get("party_type"),
+                                    info.get("status"),
+                                    json.dumps(info.get("custom_responses", {})),
+                                    info.get("created_at"),
+                                    info.get("expires_at"),
+                                    info.get("entered_at")
+                                ))
+                        customers_migrated = True
+                    except Exception as e:
+                        app.logger.error(f"Migration error for customers: {e}")
+                    finally:
+                        conn.close()
+            else:
+                customers_migrated = True
+        except Exception as e:
+            app.logger.error(f"Failed to read/migrate customers.json: {e}")
+
+    # Migrate history
+    history_file = DATA_DIR / "history.json"
+    if history_file.exists():
+        try:
+            content = history_file.read_text(encoding="utf-8").strip()
+            if content and content != "[]":
+                data = json.loads(content)
+                if data and isinstance(data, list):
+                    conn = get_db_connection()
+                    try:
+                        with conn:
+                            for item in data:
+                                conn.execute("""
+                                    INSERT INTO history (timestamp, action, details)
+                                    VALUES (?, ?, ?)
+                                """, (
+                                    item.get("timestamp"),
+                                    item.get("action"),
+                                    json.dumps(item.get("details", {}))
+                                ))
+                        history_migrated = True
+                    except Exception as e:
+                        app.logger.error(f"Migration error for history: {e}")
+                    finally:
+                        conn.close()
+            else:
+                history_migrated = True
+        except Exception as e:
+            app.logger.error(f"Failed to read/migrate history.json: {e}")
+
+    # Rename migrated JSON files so we don't migrate them again on next start
+    if events_migrated and EVENTS_FILE.exists():
+        try:
+            EVENTS_FILE.rename(EVENTS_FILE.with_suffix(".json.bak"))
+        except Exception as e:
+            app.logger.error(f"Failed to rename events.json: {e}")
+    if customers_migrated and CUSTOMERS_FILE.exists():
+        try:
+            CUSTOMERS_FILE.rename(CUSTOMERS_FILE.with_suffix(".json.bak"))
+        except Exception as e:
+            app.logger.error(f"Failed to rename customers.json: {e}")
+    if history_migrated and history_file.exists():
+        try:
+            history_file.rename(history_file.with_suffix(".json.bak"))
+        except Exception as e:
+            app.logger.error(f"Failed to rename history.json: {e}")
 
 
 def ensure_data_files() -> None:
-    """Ensure required data directory and JSON files exist for production readiness."""
+    """Ensure required data directory and database exist for production readiness."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if not CUSTOMERS_FILE.exists():
-        CUSTOMERS_FILE.write_text("{}", encoding="utf-8")
-    if not EVENTS_FILE.exists():
-        EVENTS_FILE.write_text("{}", encoding="utf-8")
-    
-    # Initialize history.json if missing
-    history_path = DATA_DIR / "history.json"
-    if not history_path.exists():
-        history_path.write_text("[]", encoding="utf-8")
+    init_db()
+
 
 # Ensure data files on startup (Required for Gunicorn readiness)
 ensure_data_files()
 
 
-def read_json(file: Path) -> dict[str, Any]:
-    ensure_data_files()
-    with data_lock:
-        try:
-            raw = json.loads(file.read_text(encoding="utf-8"))
-            if isinstance(raw, dict):
-                return raw
-        except (json.JSONDecodeError, FileNotFoundError):
-            pass
-    return {}
-
-
-def write_json(file: Path, data: dict[str, Any]) -> None:
-    ensure_data_files()
-    with open(file, "w") as f:
-        json.dump(data, f, indent=2)
-
 def read_history() -> list:
-    path = os.path.join(DATA_DIR, "history.json")
-    if not os.path.exists(path): return []
-    with data_lock:
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            return []
+    conn = get_db_connection()
+    history = []
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT timestamp, action, details FROM history ORDER BY id ASC")
+        rows = cursor.fetchall()
+        for row in rows:
+            history.append({
+                "timestamp": row["timestamp"],
+                "action": row["action"],
+                "details": json.loads(row["details"]) if row["details"] else {}
+            })
+    except Exception as e:
+        app.logger.error(f"Error reading history: {e}")
+    finally:
+        conn.close()
+    return history
+
 
 def record_history(action: str, details: dict) -> None:
-    path = os.path.join(DATA_DIR, "history.json")
-    with data_lock:
-        # Thread-safe read
-        history = []
-        if os.path.exists(path):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    history = json.load(f)
-            except:
-                history = []
-        
-        # Modify
-        history.append({
-            "timestamp": utc_now().isoformat(),
-            "action": action,
-            "details": details
-        })
-        history = history[-1000:]
-        
-        # Thread-safe write
-        try:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(history, f, indent=2)
-        except Exception as e:
-            app.logger.error(f"Failed to write history: {e}")
+    conn = get_db_connection()
+    try:
+        with conn:
+            conn.execute("""
+                INSERT INTO history (timestamp, action, details)
+                VALUES (?, ?, ?)
+            """, (
+                utc_now().isoformat(),
+                action,
+                json.dumps(details)
+            ))
+            conn.execute("""
+                DELETE FROM history WHERE id NOT IN (
+                    SELECT id FROM history ORDER BY id DESC LIMIT 1000
+                )
+            """)
+    except Exception as e:
+        app.logger.error(f"Failed to record history to DB: {e}")
+    finally:
+        conn.close()
 
 
 def read_customers() -> dict[str, dict[str, Any]]:
-    return read_json(CUSTOMERS_FILE)
+    conn = get_db_connection()
+    customers = {}
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM customers")
+        rows = cursor.fetchall()
+        for row in rows:
+            customers[row["token"]] = {
+                "name": row["name"],
+                "email": row["email"],
+                "event_id": row["event_id"],
+                "party_type": row["party_type"],
+                "status": row["status"],
+                "custom_responses": json.loads(row["custom_responses"]) if row["custom_responses"] else {},
+                "created_at": row["created_at"],
+                "expires_at": row["expires_at"],
+                "entered_at": row["entered_at"]
+            }
+    except Exception as e:
+        app.logger.error(f"Error reading customers from DB: {e}")
+    finally:
+        conn.close()
+    return customers
 
 
 def write_customers(customers: dict[str, dict[str, Any]]) -> None:
-    write_json(CUSTOMERS_FILE, customers)
+    conn = get_db_connection()
+    try:
+        with conn:
+            if not customers:
+                conn.execute("DELETE FROM customers")
+            else:
+                placeholders = ",".join("?" for _ in customers.keys())
+                conn.execute(f"DELETE FROM customers WHERE token NOT IN ({placeholders})", list(customers.keys()))
+                for token, info in customers.items():
+                    conn.execute("""
+                        INSERT OR REPLACE INTO customers 
+                        (token, event_id, name, email, party_type, status, custom_responses, created_at, expires_at, entered_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        token,
+                        info.get("event_id"),
+                        info.get("name"),
+                        info.get("email"),
+                        info.get("party_type"),
+                        info.get("status"),
+                        json.dumps(info.get("custom_responses", {})),
+                        info.get("created_at"),
+                        info.get("expires_at"),
+                        info.get("entered_at")
+                    ))
+    except Exception as e:
+        app.logger.error(f"Error writing customers to DB: {e}")
+    finally:
+        conn.close()
 
 
 def read_events() -> dict[str, dict[str, Any]]:
-    return read_json(EVENTS_FILE)
+    conn = get_db_connection()
+    events = {}
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM events")
+        rows = cursor.fetchall()
+        for row in rows:
+            events[row["event_id"]] = {
+                "manager_name": row["manager_name"],
+                "event_name": row["event_name"],
+                "password": row["password"],
+                "manager_email": row["manager_email"],
+                "custom_fields": json.loads(row["custom_fields"]) if row["custom_fields"] else [],
+                "created_at": row["created_at"]
+            }
+    except Exception as e:
+        app.logger.error(f"Error reading events from DB: {e}")
+    finally:
+        conn.close()
+    return events
 
 
 def write_events(events: dict[str, dict[str, Any]]) -> None:
-    write_json(EVENTS_FILE, events)
+    conn = get_db_connection()
+    try:
+        with conn:
+            if not events:
+                conn.execute("DELETE FROM events")
+            else:
+                placeholders = ",".join("?" for _ in events.keys())
+                conn.execute(f"DELETE FROM events WHERE event_id NOT IN ({placeholders})", list(events.keys()))
+                for event_id, info in events.items():
+                    conn.execute("""
+                        INSERT OR REPLACE INTO events 
+                        (event_id, manager_name, event_name, password, manager_email, custom_fields, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        event_id,
+                        info.get("manager_name"),
+                        info.get("event_name"),
+                        info.get("password"),
+                        info.get("manager_email"),
+                        json.dumps(info.get("custom_fields", [])),
+                        info.get("created_at")
+                    ))
+    except Exception as e:
+        app.logger.error(f"Error writing events to DB: {e}")
+    finally:
+        conn.close()
 
 
 def utc_now() -> datetime:
